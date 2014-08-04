@@ -1,0 +1,40 @@
+Perfectly Precise Math Library 3.0 - Sep 4, 2013 13:15
+
+- rewrote prec-math
+- complex numbers now represented as an array [a, b] instead of a string ‘a,b’
+- removed most input checking code such as a = String(a)s at the start of each real function and checkArgs... at the start of each complex function
+  - as a result, all inputs must now be exactly as specified
+    - inputing a string where a number is expected will cause potentially confusing 
+    problems
+    - if you still want this functionality, use the prec-math-check extension
+- complex functions that need a real number input now take "34" instead of ["34", "0"]
+  - ex. root("3", ["545", "32"])
+- new constants ln2, ln5, and ln10
+- new functions isValid, isValidReal, canon, canonr, isReal, isCompInt
+- reordered functions in code and in export lists to have a more intuitive order
+- added comment headers to seperate sections of code that have different functions
+- removed all instances of trimZeros at start and end of real functions
+  - in all cases, when input is canonical, output is also canonical
+  - canonicalization can be done with canonr
+  - trimZeros seperated into trimInt, trimDecStart, and trimDecEnd
+  - canonr is almost never run in the code (only in subr and divrLong) in contrast to 
+  the ubiquity of trimZeros in v2.0
+- rewrote isZero to be more efficient and to be able to take negative nprecs
+- new function isDiffZero to be used in iterative algorithms (replaces getPrec)
+- len and nlen return -Infinity when given input of "0" like log would do
+- fixed bug: numToFloat now remembers to put the sign on the first part
+- mDotLeft and mDotRight can now take negative n
+- renamed any function names like multr1 and multr2 to more descriptive names like multrLong and multrKarat
+- multrKarat variable names and handling now matches that of the Wikipedia article
+- ceilr, floorr, and truncr now take negative, positive, and undefined nprec like roundr
+- new sqrtrShift algorithm that uses sqrt(a) = sqrt(100*a)/10 to remove decimals so that sqrtrCont can be used
+  - this is much faster than sqrtrNewton
+- new much faster divide and conquer algorithm for factorial
+- binr now uses multrRange to replace n!/k!
+- genContFrac and simpContFrac side effect vars now in one array
+lastNums = [n, pn, qn]
+- function inputs to genContFrac and simpContFrac must return strings or null; no more numbers
+  - if you need this functionality, use prec-math-check extension
+- added functions prep, prepReal, prepNum, prepInt, prepr, preprNum, preprInt for use like if (!$.isFalse(a = R.prep(a)))...
+- added if (nprec == -Infinity)return "0"; at start of every outside facing real function that uses nprec to fix sin(345)
+- as a result of all these changes, all operations are now significantly faster

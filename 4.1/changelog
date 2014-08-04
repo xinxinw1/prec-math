@@ -1,0 +1,5 @@
+Perfectly Precise Math Library 4.1 - Jul 17, 2014 15:34
+
+- simplified some division declen lines
+- qar now supports negative numbers and decimals
+- frac and sfrac nums are now R.frac.n, R.frac.p, R.frac.q

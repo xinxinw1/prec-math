@@ -1,0 +1,16 @@
+Version 1.3 - Jan 7, 2013 15:33
+
+- new functions: atanr and atan2r
+- arg now uses atan2r with the result that sqrt(-1) now = i !!!
+- variable neg -> sign
+- function negn -> neg
+- added lt (less than) function
+- efficientized len(a)
+- addr, subr: redirects now carry nprec
+- saved some unnecessary uses of trimZeros
+- elegantized powrd
+- fixed bug in sqrtr: sqrtr("3.9615705608064608982523644722684781", 33) now works
+- accuratized expr
+- roundr now takes negative nprec
+- accuratized sin and cos
+- fixed bug in pir: pi(21) now gives 3.141592653589793238463 instead of ...62

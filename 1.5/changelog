@@ -1,0 +1,14 @@
+Version 1.5 - Jan 29, 2013 18:49
+
+- removed Array.num prototype; it is never used
+- replaced checkUndefined with checkArgs and argsToArr which makes the call more beautiful: checkUndefined("add(z, w)", ["z", "w"], [z, w]); -> checkArgs("add(z, w, nprec)", arguments);
+- systematized treatment of nprec in the complex functions with getNprec and checkArgs
+- div checks when c and d are 0
+- reordered complex functions: add, mult, div, exp, ln, pow, root, sqrt, cbrt, abs, arg, sgn, sin, cos, round, trunc, floor, ceil, re, im, conj
+- exp: applied multiplication accuracy formula
+- pow uses powr for whenever z and w are real and either w is an integer or z is positive instead of just when w is an integer
+- root: use real functions when z is real and n is odd
+- sin and cos: applied multiplication accuracy formula
+- added re, im, and conj functions
+- moved negr to real functions group
+- powr uses multr when b = 2 and uses exp(b*ln(a)) when b isn't an integer

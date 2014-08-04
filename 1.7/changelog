@@ -1,0 +1,11 @@
+Version 1.7 - Mar 16, 2013 11:39
+
+- rewrote divr algorithm
+- sqrtrd: fixed precision bug
+- lnr: new faster algorithm with machin-like formulas for ln2, ln5, ln10
+- floorr, ceilr, truncr: added trimZeros when there is no dot
+- sinsmall, cossmall: only calculate a^2 when a is an integer
+- atan2r: only calculate pi and hPI when necessary
+- acotrl, acothrl: continued fractions used for calculating ln2, 5, and 10 and pi
+- pir: new algorithm using Machin-like formulas
+- continued fractions: only ask for each an and bn once
