@@ -1,6 +1,8 @@
 # Perfectly Precise Math Library
 
-## How to use
+An arbitrary precision math library that works in both web js and Node.js.
+
+## How to use in HTML
 
 1. Go to https://github.com/xinxinw1/tools/releases and download the latest release.
 2. Go to https://github.com/xinxinw1/prec-math/releases and download the latest release.
@@ -12,6 +14,15 @@
    ```
    to your html file.
 4. Run `$.al(R.mul("28357328497389579234", "81659102395873434265"));` to make sure it works.
+
+## How to use in Node.js
+
+1. Go to https://github.com/xinxinw1/tools/releases and download the latest release.
+2. Go to https://github.com/xinxinw1/prec-math/releases and download the latest release.
+3. Extract `tools.js` from the first download and `prec-math.js` from the second download into your project directory.
+4. Run `$ = require("./tools.js")` in node.
+5. Run `R = require("./prec-math.js")` in node
+6. Run `$.prn(R.mul("28357328497389579234", "81659102395873434265"));` to make sure it works.
 
 ## Function reference
 
