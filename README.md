@@ -15,6 +15,8 @@ An arbitrary precision math library that works in both web js and Node.js.
    to your html file.
 4. Run `$.al(R.mul("28357328497389579234", "81659102395873434265"));` to make sure it works. (Should output 2315633991441755403248652686986908053010)
 
+See http://xinxinw1.github.io/prec-math/ for a demo.
+
 ## How to use in Node.js
 
 1. Go to https://github.com/xinxinw1/tools/releases and download the latest release.
