@@ -29,11 +29,14 @@ See http://xinxinw1.github.io/prec-math/ for a demo.
 ## Function reference
 
 ```
-Note: There are a couple of functions that exist, but haven't been documented yet
+Note: There are a couple of functions that exist, but haven't been
+  documented yet
 
 Note 2: These are all accessed by R.<insert name>
 
-Conventions: a and b are almost always regular real numbers like "4.5" and "-234", n is always a real integer like "5", and p is always a js integer like 456
+Conventions: a and b are almost always regular real numbers like
+  "4.5" and "-234", n is always a real integer like "5", and p is always a
+  js integer like 456
 
 ### Default precision
 
