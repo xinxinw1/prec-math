@@ -1,4 +1,4 @@
-/***** Perfectly Precise Math Library 4.2.0 *****/
+/***** Perfectly Precise Math Library 4.2.1 *****/
 
 /* require tools 4.1.5 */
 
@@ -2159,6 +2159,11 @@
     cei: cei,
     flr: flr,
     trn: trn,
+    
+    round: rnd,
+    ceil: ceil,
+    floor: flr,
+    trunc: trn,
     
     exp: exp,
     ln: ln,
