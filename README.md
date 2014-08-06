@@ -13,7 +13,7 @@ An arbitrary precision math library that works in both web js and Node.js.
    <script src="prec-math.js"></script>
    ```
    to your html file.
-4. Run `$.al(R.mul("28357328497389579234", "81659102395873434265"));` to make sure it works.
+4. Run `$.al(R.mul("28357328497389579234", "81659102395873434265"));` to make sure it works. (Should output 2315633991441755403248652686986908053010)
 
 ## How to use in Node.js
 
@@ -22,7 +22,7 @@ An arbitrary precision math library that works in both web js and Node.js.
 3. Extract `tools.js` from the first download and `prec-math.js` from the second download into your project directory.
 4. Run `$ = require("./tools.js")` in node.
 5. Run `R = require("./prec-math.js")` in node
-6. Run `$.prn(R.mul("28357328497389579234", "81659102395873434265"));` to make sure it works.
+6. Run `$.prn(R.mul("28357328497389579234", "81659102395873434265"));` to make sure it works. (Should output 2315633991441755403248652686986908053010 and return undefined)
 
 ## Function reference
 

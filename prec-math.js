@@ -2161,7 +2161,7 @@
     trn: trn,
     
     round: rnd,
-    ceil: ceil,
+    ceil: cei,
     floor: flr,
     trunc: trn,
     
