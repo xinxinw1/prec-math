@@ -1,6 +1,0 @@
-Version 1.0 - Nov 26, 2012 22:04
-
-- seperated math library from Complex Number Calculator
-- added quotAndRem function which does division and returns quotient and remainder
-- mDotRight and Left now trimZeros at end
-- modr is faster and more correct

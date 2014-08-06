@@ -1,9 +1,0 @@
-RewriteEngine on
-
-RewriteRule ^1\.x/(.*)$ 1.7.1/$1 [L,env=nocache:true]
-RewriteRule ^2\.x/(.*)$ 2.1/$1 [L,env=nocache:true]
-RewriteRule ^3\.x/(.*)$ 3.0/$1 [L,env=nocache:true]
-RewriteRule ^4\.x/(.*)$ 4.1/$1 [L,env=nocache:true]
-RewriteRule ^latest/(.*)$ 4.x/$1 [L,env=nocache:true]
-
-Header set Cache-Control no-cache env=REDIRECT_nocache

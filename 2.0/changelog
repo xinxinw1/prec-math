@@ -1,5 +1,0 @@
-Perfectly Precise Math Library 2.0 - Jul 29, 2013 18:46
-
-- encapsulated everything in a closure and released objects PMath, R, and C
-- removed unused Array.prototype.addAll
-- added sub function for use by outside applications
