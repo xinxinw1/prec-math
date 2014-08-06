@@ -1,10 +1,11 @@
-/***** Perfectly Precise Math Library 4.1 *****/
+/***** Perfectly Precise Math Library 4.2.0 *****/
 
-/* require tools 4.0 */
+/* require tools 4.1.5 */
 
-(function (win, udf){
+(function (udf){
   ////// Import //////
   
+  var nodep = $.nodep;
   var inf = Infinity;
   var num = Number;
   var str = String;
@@ -2080,9 +2081,29 @@
     sfrac.q = q;
   }
   
+  ////// Logging //////
+  
+  var logfn = function (subj, data){};
+  
+  function log(subj){
+    logfn(subj + ": ", apl(stf, sli(arguments, 1)));
+  }
+  
+  function glogfn(f){
+    return logfn;
+  }
+  
+  function slogfn(f){
+    return logfn = f;
+  }
+  
+  sefn(function (e){
+    logfn("Error: ", e.s + ": " + e.a);
+  });
+  
   ////// R object exposure //////
   
-  win.R = {
+  var R = {
     real: real,
     //realnum: realnum,
     realint: realint,
@@ -2166,38 +2187,17 @@
     qar: qar,
     mulran: mulran,
     frac: frac,
-    sfrac: sfrac
-  };
-  
-  ////// Logging //////
-  
-  var logfn = function (subj, data){};
-  
-  function log(subj){
-    logfn(subj + ": ", apl(stf, sli(arguments, 1)));
-  }
-  
-  function glogfn(f){
-    return logfn;
-  }
-  
-  function slogfn(f){
-    return logfn = f;
-  }
-  
-  sefn(function (e){
-    logfn("Error: ", e.s + ": " + e.a);
-  });
-  
-  ////// PMath object exposure //////
-  
-  win.PMath = {
+    sfrac: sfrac,
+    
     gprec: gprec,
     sprec: sprec,
     log: log,
     glogfn: glogfn,
     slogfn: slogfn
   };
+  
+  if (nodep)module.exports = R;
+  else window.R = R;
   
   ////// Speed tests //////
   
@@ -2216,4 +2216,4 @@
   
   
   
-})(window);
+})();
