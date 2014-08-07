@@ -184,9 +184,8 @@ sfrac(a, p)       simple continued fraction; all bn equal 1;
 
 ### Logging
 
-log(subj, a, args...)  add a message to the log where a and args are passed
-                         to $.stf(a, ...args)  (see xinxinw1/tools)
-glogfn(f)              get the current log function callback
-slogfn(f)              set the log function callback
+logfn(f)          set logger callback; takes a function(subj, data);
+                    currently nothing is actually logged in prec-math, but
+                    use this if you want to catch future logged items
 
-
+```
