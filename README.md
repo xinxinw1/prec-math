@@ -7,13 +7,13 @@ An arbitrary precision math library that works in both web js and Node.js.
 1. Go to https://github.com/xinxinw1/tools/releases and download the latest release.
 2. Go to https://github.com/xinxinw1/prec-math/releases and download the latest release.
 3. Extract `tools.js` from the first download and `prec-math.js` from the second download into your project directory.
-3. Add
+4. Add
    ```html
    <script src="tools.js"></script>
    <script src="prec-math.js"></script>
    ```
    to your html file.
-4. Run `$.al(R.mul("28357328497389579234", "81659102395873434265"));` to make sure it works. (Should output 2315633991441755403248652686986908053010)
+5. Run `$.al(R.mul("28357328497389579234", "81659102395873434265"));` to make sure it works. (Should output 2315633991441755403248652686986908053010)
 
 See http://xinxinw1.github.io/prec-math/ for a demo.
 
@@ -29,9 +29,14 @@ See http://xinxinw1.github.io/prec-math/ for a demo.
 ## Function reference
 
 ```
-Note: There are a couple of functions that exist, but haven't been documented yet
+Note: There are a couple of functions that exist, but haven't been
+  documented yet
 
 Note 2: These are all accessed by R.<insert name>
+
+Conventions: a and b are almost always regular real numbers like
+  "4.5" and "-234", n is always a real integer like "5", and p is always a
+  js integer like 456
 
 ### Default precision
 
@@ -43,8 +48,10 @@ sprec(p)          set current precision
 #### Converters
 
 real(a)           ensure a is a proper real number (could have been a regular
-                    js number or a string number like "0002234.53000")
-realint(a)        ensure a is a real integer
+                    js number or a string number like "0002234.53000");
+                    returns false if a is not a proper number
+realint(a)        ensure a is a real integer;
+                    returns false if a is not an integer
 
 #### Validators
 
@@ -106,10 +113,13 @@ le(a, b)          a <= b
 
 #### Basic operation functions
 
-add(a, b, p)      a + b; if p is given, round the result to p decimal places
+add(a, b, p)      a + b; if p is given, round the result to p decimal places;
+                    decimals; note that p must be a js integer
 sub(a, b, p)      a - b
 mul(a, b, p)      a * b
 div(a, b, p)      a / b
+
+#### Rounding functions
 
 rnd(a, p)         round a to p decimal places; p can be negative and -Infinity
 cei(a, p)         ceiling of a at p decimal places
@@ -120,6 +130,8 @@ round(a, p)       aliases of the functions above
 ceil(a, p)
 floor(a, p)
 trunc(a, p)
+
+#### Extended operation functions
 
 exp(a, p)         e^a rounded to p decimals
 ln(a, p)          natural log of a
@@ -145,7 +157,7 @@ neg(a)            -a  negate a
 #### Mathematical constants
 
 pi(p)             pi to p decimal places
-e(p)              Euler's constant e to p decimal places
+e(p)              Euler's number e to p decimal places
 phi(p)            the golden ratio to p decimal places
 ln2(p)            ln(2) to p decimals
 ln5(p)            ln(5) to p decimals
@@ -172,9 +184,8 @@ sfrac(a, p)       simple continued fraction; all bn equal 1;
 
 ### Logging
 
-log(subj, a, args...)  add a message to the log where a and args are passed
-                         to $.stf(a, ...args)  (see xinxinw1/tools)
-glogfn(f)              get the current log function callback
-slogfn(f)              set the log function callback
+logfn(f)          set logger callback; takes a function(subj, data);
+                    currently nothing is actually logged in prec-math, but
+                    use this if you want to catch future logged items
 
-
+```
