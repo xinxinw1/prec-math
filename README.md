@@ -7,13 +7,13 @@ An arbitrary precision math library that works in both web js and Node.js.
 1. Go to https://github.com/xinxinw1/tools/releases and download the latest release.
 2. Go to https://github.com/xinxinw1/prec-math/releases and download the latest release.
 3. Extract `tools.js` from the first download and `prec-math.js` from the second download into your project directory.
-3. Add
+4. Add
    ```html
    <script src="tools.js"></script>
    <script src="prec-math.js"></script>
    ```
    to your html file.
-4. Run `$.al(R.mul("28357328497389579234", "81659102395873434265"));` to make sure it works. (Should output 2315633991441755403248652686986908053010)
+5. Run `$.al(R.mul("28357328497389579234", "81659102395873434265"));` to make sure it works. (Should output 2315633991441755403248652686986908053010)
 
 See http://xinxinw1.github.io/prec-math/ for a demo.
 
