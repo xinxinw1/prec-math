@@ -116,7 +116,7 @@ le(a, b)          a <= b
 #### Basic operation functions
 
 add(a, b, p)      a + b; if p is given, round the result to p decimal places;
-                    decimals; note that p must be a js integer
+                    note that p must be a js integer
 sub(a, b, p)      a - b
 mul(a, b, p)      a * b
 div(a, b, p)      a / b
