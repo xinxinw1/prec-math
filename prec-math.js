@@ -503,6 +503,11 @@
   
   function gt(a, b){ // is (a > b) ?
     if (a == b)return false;
+    if (negp(a)){
+      if (negp(b))return lt(remneg(a), remneg(b));
+      return false; // -5 > 3
+    }
+    if (negp(b))return true; // 5 > -10
     
     var arr = pad(a, b);
     a = arr[0]; b = arr[1];
@@ -519,6 +524,11 @@
   
   function lt(a, b){ // is (a < b) ?
     if (a == b)return false;
+    if (negp(a)){
+      if (negp(b))return gt(remneg(a), remneg(b));
+      return true; // -5 < 3
+    }
+    if (negp(b))return false; // 5 < -10
     
     var arr = pad(a, b);
     a = arr[0]; b = arr[1];
@@ -535,6 +545,11 @@
   
   function ge(a, b){ // is (a >= b) ?
     if (a == b)return true;
+    if (negp(a)){
+      if (negp(b))return le(remneg(a), remneg(b));
+      return false; // -5 >= 3
+    }
+    if (negp(b))return true; // 5 >= -10
     
     var arr = pad(a, b);
     a = arr[0]; b = arr[1];
@@ -551,6 +566,11 @@
   
   function le(a, b){ // is (a <= b) ?
     if (a == b)return true;
+    if (negp(a)){
+      if (negp(b))return ge(remneg(a), remneg(b));
+      return true; // -5 <= 3
+    }
+    if (negp(b))return false; // 5 <= -10
     
     var arr = pad(a, b);
     a = arr[0]; b = arr[1];
