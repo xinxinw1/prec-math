@@ -1,4 +1,4 @@
-/***** Perfectly Precise Math Library 4.3.0 *****/
+/***** Perfectly Precise Math Library 4.3.1 *****/
 
 /* require tools 4.1.5 */
 
@@ -1793,7 +1793,7 @@
     for (var an = 6; true; an += 4){
       pn = add(mul(str(an), p1), p0);
       qn = add(mul(str(an), q1), q0);
-      if (2*siz(qn)-2 >= p)break;
+      if (2*nsiz(qn)-2 >= p)break;
       p0 = p1;
       q0 = q1;
       p1 = pn;
@@ -1815,7 +1815,7 @@
     var fn;
     while (true){
       fn = add(f0, f1);
-      if (2*siz(f1)-2 >= p)break;
+      if (2*nsiz(fn)-2 >= p)break;
       f0 = f1;
       f1 = fn;
     }
