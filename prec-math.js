@@ -15,6 +15,10 @@
   
   var al = $.al;
   
+  var len = $.len;
+  
+  var nof = $.nof;
+  
   var apl = $.apl;
   var sli = $.sli;
   var stf = $.stf;
@@ -63,7 +67,7 @@
   
   //// Canonicalizers ////
   
-  function trim(a){
+  /*function trim(a){
     var s = negp(a);
     if (s)a = remneg(a);
     a = trimn(a);
@@ -114,46 +118,132 @@
       }
     }
     return "0";
+  }*/
+  
+  function real(neg, exp, dat){
+    return {neg: neg, exp: exp, dat: dat};
+  }
+  
+  function zero(){
+    return real(false, 0, "0");
+  }
+  
+  function countl(x, a){
+    for (var i = 0; i < a.length; i++){
+      if (a[i] !== x)return i;
+    }
+    return a.length;
+  }
+  
+  function countr(x, a){
+    for (var i = a.length-1; i >= 0; i--){
+      if (a[i] !== x)return a.length-1-i;
+    }
+    return a.length;
+  }
+  
+  function normInt(a){
+    var zs = countl("0", a);
+    if (zs === a.length)return "0"; // if a = "", then "0" is returned
+    if (zs === 0)return a;
+    return sli(a, zs);
+  }
+  
+  /*
+  function normInt(a){
+    for (var i = 0; i < a.length; i++){
+      if (a[i] != '0'){
+        if (i != 0)return sli(a, i);
+        return a;
+      }
+    }
+    return "0";
+  }*/
+  
+  /*function norml(a){
+    var n = normInt(a.dat);
+    if (n === "0")return zero();
+    return real(a.neg, a.exp, n);
+  }*/
+  
+  function norml(a){
+    var zs = countl("0", a.dat);
+    if (zs === a.dat.length)return zero();
+    if (zs === 0)return a;
+    return real(a.neg, a.exp, sli(a.dat, zs));
+  }
+  
+  function normr(a){
+    var zs = countr("0", a.dat);
+    if (zs === a.dat.length)return zero();
+    if (zs === 0)return a;
+    return real(a.neg, a.exp+zs, sli(a.dat, 0, a.dat.length-zs));
+  }
+  
+  /*function normr(a){
+    var x = a.dat;
+    for (var i = x.length-1; i >= 0; i--){
+      if (a[i] != '0'){
+        if (i != x.length-1)return real(a.neg, a.exp+x.length-1-i, sli(x, 0, i+1));
+        return a;
+      }
+    }
+    return zero();
+  }*/
+  
+  function norm(a){
+    return norml(normr(a));
+  }
+  
+  function lasdig(a){
+    return a.dat[a.dat.length-1];
   }
   
   /*! All real num functions past here assumes all inputs are trimmed !*/
   
+  /*
+  x = {type: "real", neg: true, exp: 3, dat: "153452534"}
+    = -153452534000
+  */
+  
   //// is... functions
   
   function posp(a){
-    return a[0] != '-';
+    return !a.neg;
   }
   
   function negp(a){
-    return a[0] == '-';
+    return a.neg;
   }
   
   function intp(a){
-    return a.indexOf(".") == -1;
+    return a.exp >= 0;
   }
   
   function decp(a){
-    return a.indexOf(".") != -1;
+    return a.exp < 0;
   }
   
   function evnp(a){
-    if (decp(a))return false;
-    return inp(a[a.length-1], '0', '2', '4', '6', '8');
+    if (a.exp < 0)return false;
+    if (a.exp > 0)return true;
+    return inp(las(a.dat), '0', '2', '4', '6', '8');
   }
   
   function oddp(a){
-    if (decp(a))return false;
-    return inp(a[a.length-1], '1', '3', '5', '7', '9');
+    if (a.exp !== 0)return false;
+    return inp(las(a.dat), '1', '3', '5', '7', '9');
   }
   
   function div5p(a){
-    if (decp(a))return false;
-    return inp(a[a.length-1], '0', '5');
+    if (a.exp < 0)return false;
+    if (a.exp > 0)return true;
+    return inp(las(a.dat), '0', '5');
   }
   
   //// Processing functions ////
   
-  function posdot(a){
+  /*function posdot(a){
     var dot = a.indexOf(".");
     return (dot == -1)?a.length:dot;
   }
@@ -165,13 +255,13 @@
   }
   
   function intlen(a){
-    return negp(a)?posdot(a)-1:posdot(a);
+    var n = siz(a);
+    return (n < 0)?0:n;
   }
   
   function declen(a){
-    var dot = a.indexOf(".");
-    if (dot == -1)return 0;
-    return a.length-1-dot;
+    var n = -a.exp;
+    return (n < 0)?0:n;
   }
   
   function intpt(a){
@@ -188,47 +278,68 @@
   
   function sign(a){
     return (a[0] == '-')?"-":"";
+  }*/
+  
+  function zerop(a){
+    return a.dat === "0";
   }
   
   // alias of remsgn
-  function remneg(a){
+  /*function remneg(a){
     return a.substring(1, a.length);
-  }
+  }*/
   
-  function pad(a, b){
-    var alen = a.length;
-    var blen = b.length;
-    var adot = a.indexOf(".");
-    var bdot = b.indexOf(".");
-    
-    if (adot == -1){
-      if (bdot == -1){
-        for (var i = alen-blen; i >= 1; i--)b = "0" + b;
-        for (var i = blen-alen; i >= 1; i--)a = "0" + a;
-        return [a, b];
-      } else {
-        a += ".0";
-        adot = alen;
-        alen += 2;
-      }
-    } else if (bdot == -1){
-      b += ".0";
-      bdot = blen;
-      blen += 2;
-    }
-    
-    for (var i = (alen-adot)-(blen-bdot); i >= 1; i--)b += "0";
-    for (var i = (blen-bdot)-(alen-adot); i >= 1; i--)a += "0";
-    
-    for (var i = adot-bdot; i >= 1; i--)b = "0" + b;
-    for (var i = bdot-adot; i >= 1; i--)a = "0" + a;
-    
+  function padInt(a, b){
+    var al = len(a); var bl = len(b);
+    if (al > bl)return [a, nof(al-bl, "0") + b];
+    if (al < bl)return [nof(bl-al, "0") + a, b];
     return [a, b];
   }
   
+  function padr(a, b){
+    var ae = a.exp; var be = b.exp;
+    var ad = a.dat; var bd = b.dat;
+    if (ae > be)return [real(a.neg, be, ad+nof(ae-be, "0")), b];
+    if (ae < be)return [a, real(b.neg, ae, bd+nof(be-ae, "0"))];
+    return [a, b];
+  }
+  
+  function padl(a, b){
+    var r = padInt(a.dat, b.dat);
+    return [real(a.neg, a.exp, r[0]), real(b.neg, b.exp, r[1])];
+  }
+  
+  /*function padl(a, b){
+    var ad = a.dat; var bd = b.dat;
+    var al = len(ad); var bl = len(bd);
+    if (al > bl)return [a, real(b.neg, b.exp, nof(al-bl, "0") + bd)];
+    if (al < bl)return [real(a.neg, a.exp, nof(bl-al, "0") + ad), b];
+    return [a, b];
+  }*/
+  
+  function pad(a, b){
+    return apl(padl, padr(a, b));
+  }
+  
+  /*function pad(a, b){
+    var ae = a.exp; var be = b.exp;
+    var ad = a.dat; var bd = b.dat;
+    if (ae > be){
+      ad += nof(ae-be, "0");
+      ae = be;
+    } else if (ae < be){
+      bd += nof(be-ae, "0");
+      be = ae;
+    }
+    var al = len(ad); var bl = len(bd);
+    if (al > bl)bd = nof(al-bl, "0") + bd;
+    else if (al < bl)ad = nof(bl-al, "0") + ad;
+    return [real(a.neg, ae, ad), real(b.neg, be, bd)];
+  }*/
+  
   // return rnd(a, p) == "0";
   // not part of "is... functions" because it involves rounding and nprec
-  function zero(a, p){ 
+  /*function zero(a, p){ 
     if (a == "0")return true;
     if (p == udf)p = 0;
     
@@ -249,7 +360,7 @@
       }
       return num(a[adot+1+p]) < 5;
     }
-  }
+  }*/
   
   // return zero(sub(a, b), p);
   function diff(a, b, p){
@@ -352,39 +463,15 @@
   }
   
   // equals flr(log(abs(a)))+1
+  // siz(a) >= log(a)
   function siz(a){
-    if (a == "0")return -inf;
-    
-    if (negp(a))a = remneg(a);
-    
-    var fa = trn(a);
-    if (fa != "0")return fa.length;
-    
-    // 2 = a.indexOf(".")+1
-    // 2-i = -(i-(a.indexOf(".")+1))
-    for (var i = 2; i < a.length; i++){
-      if (a[i] != '0')return 2-i;
-    }
-    
-    err(siz, "Something strange happened");
+    return len(a.dat)+a.exp;
   }
   
-  // equals flr(log(abs(a)));
+  // equals flr(log(abs(a)))
+  // nsiz(a) < log(a)
   function nsiz(a){
-    if (a == "0")return -inf;
-    
-    if (negp(a))a = remneg(a);
-    
-    var fa = trn(a);
-    if (fa != "0")return fa.length-1;
-    
-    // 2 = a.indexOf(".")+1
-    // 2-i = -(i-(a.indexOf(".")+1))
-    for (var i = 2; i < a.length; i++){
-      if (a[i] != '0')return 2-i-1;
-    }
-    
-    err(nsiz, "Something strange happened");
+    return siz(a)-1;
   }
   
   // input a = num(a);
@@ -395,19 +482,16 @@
     else if (a == "-Infinity")a = "-1.7976931348623157e+308";
     
     var pos = a.indexOf("e");
-    if (pos == -1)return a;
+    if (pos == -1)return proc(a);
     
-    var front = a.substring(0, pos);
-    var sign = a[pos+1];
-    var back = num(a.substring(pos+2, a.length));
-    
-    if (sign == '+')return right(front, back);
-    if (sign == '-')return left(front, back);
+    var nu = proc(a.substring(0, pos));
+    var ex = real(a.substring(pos+1, a.length));
+    return real(nu.neg, nu.exp+ex, nu.dat);
   }
   
   //// Floating point ////
   
-  function num2flt(a){
+  /*function num2flt(a){
     var sign = "";
     if (negp(a)){
       a = remneg(a);
@@ -432,183 +516,117 @@
     if (a[1] > 0)return right(a[0], a[1]);
     if (a[1] == 0)return a[0];
     if (a[1] < 0)return left(a[0], -a[1]);
-  }
+  }*/
   
   //// Dot movers ////
   
   // @param String a
   // @param Number n
-  function left(a, n){ // 32.44 -> 3.244
-    if (n == 0 || a == "0")return a;
-    if (n < 0)return right(a, -n);
-    
-    var sign = "";
-    if (negp(a)){
-      a = remneg(a);
-      sign = "-";
-    }
-    
-    var alen = a.length;
-    var adot = a.indexOf(".");
-    if (adot == -1)adot = alen;
-    
-    var zeros = n-adot;
-    if (zeros >= 0){
-      for (var i = zeros; i >= 1; i--)a = "0" + a;
-      a = "0." + remdot(a);
-    } else {
-      if (adot == alen){
-        a = a.substring(0, adot-n) + "." + a.substring(adot-n, alen);
-      } else {
-        a = a.substring(0, adot-n) + "." + a.substring(adot-n, adot) + a.substring(adot+1, alen);
-      }
-    }
-    
-    if (adot == alen)a = trimr(a);
-    return sign + a;
+  function left(a, n){
+    return right(a, -n);
   }
   
-  // @param String a
-  // @param Number n
-  function right(a, n){ // 32.44 -> 324.4
-    if (n == 0 || a == "0")return a;
-    if (n < 0)return left(a, -n);
-    
-    // sign only used for trimdl
-    var sign = "";
-    if (negp(a)){
-      a = remneg(a);
-      sign = "-";
-    }
-    
-    var adot = a.indexOf(".");
-    if (adot != -1){
-      var alen = a.length;
-      var zeros = n-(alen-1-adot);
-      if (zeros >= 0){
-        for (var i = zeros; i >= 1; i--)a += "0";
-        a = a.substring(0, adot) + a.substring(adot+1, a.length);
-      } else {
-        a = a.substring(0, adot) + a.substring(adot+1, adot+1+n) + "." + a.substring(adot+1+n, alen);
-      }
-    } else {
-      for (var i = n; i >= 1; i--)a += "0";
-    }
-    
-    if (adot != alen)a = trimdl(a);
-    return sign + a;
+  function right(a, n){
+    return real(a.neg, a.exp+n, a.dat);
   }
   
   //// Comparison functions ////
   
-  function gt(a, b){ // is (a > b) ?
-    if (a == b)return false;
-    if (negp(a)){
-      if (negp(b))return lt(remneg(a), remneg(b));
-      return false; // -5 > 3
+  // @param string a, b
+  function compInt(a, b, f){
+    if (a === b)return f(1, 1); // f(a, b) might overflow
+    var al = len(a); var bl = len(b);
+    if (al !== bl)return f(al, bl);
+    for (var i = 0; i < al; i++){
+      if (a[i] !== b[i])return f(Number(a[i]), Number(b[i]));
     }
-    if (negp(b))return true; // 5 > -10
-    
-    var arr = pad(a, b);
-    a = arr[0]; b = arr[1];
-    
-    a = remdot(a);
-    b = remdot(b);
-    
-    for (var i = 0; i < a.length; i++){
-      if (a[i] != b[i])return (num(a[i]) > num(b[i]));
-    }
-    
-    err(gt, "Something strange happened (input not trimical)");
   }
   
-  function lt(a, b){ // is (a < b) ?
-    if (a == b)return false;
-    if (negp(a)){
-      if (negp(b))return gt(remneg(a), remneg(b));
-      return true; // -5 < 3
-    }
-    if (negp(b))return false; // 5 < -10
-    
-    var arr = pad(a, b);
-    a = arr[0]; b = arr[1];
-    
-    a = remdot(a);
-    b = remdot(b);
-    
-    for (var i = 0; i < a.length; i++){
-      if (a[i] != b[i])return (num(a[i]) < num(b[i]));
-    }
-    
-    err(lt, "Something strange happened (input not trimical)");
+  function gtInt(a, b){
+    return compInt(a, b, function (a, b){return a > b;});
   }
   
-  function ge(a, b){ // is (a >= b) ?
-    if (a == b)return true;
-    if (negp(a)){
-      if (negp(b))return le(remneg(a), remneg(b));
-      return false; // -5 >= 3
-    }
-    if (negp(b))return true; // 5 >= -10
-    
-    var arr = pad(a, b);
-    a = arr[0]; b = arr[1];
-    
-    a = remdot(a);
-    b = remdot(b);
-    
-    for (var i = 0; i < a.length; i++){
-      if (a[i] != b[i])return (num(a[i]) > num(b[i]));
-    }
-    
-    err(ge, "Something strange happened (input not trimical)");
+  function ltInt(a, b){
+    return compInt(a, b, function (a, b){return a < b;});
   }
   
-  function le(a, b){ // is (a <= b) ?
-    if (a == b)return true;
-    if (negp(a)){
-      if (negp(b))return ge(remneg(a), remneg(b));
-      return true; // -5 <= 3
+  function geInt(a, b){
+    return compInt(a, b, function (a, b){return a >= b;});
+  }
+  
+  function leInt(a, b){
+    return compInt(a, b, function (a, b){return a <= b;});
+  }
+  
+  function comp(a, b, f){
+    if (a.neg){
+      if (b.neg)return comp(abs(b), abs(a), f);
+      return f(-1, 1); // -5 > 3
     }
-    if (negp(b))return false; // 5 <= -10
+    if (b.neg)return f(1, -1); // 5 > -10
     
-    var arr = pad(a, b);
+    //var as = siz(a); var bs = siz(b);
+    //if (as !== bs)return f(as, bs);
+    
+    var arr = padr(a, b);
     a = arr[0]; b = arr[1];
     
-    a = remdot(a);
-    b = remdot(b);
-    
-    for (var i = 0; i < a.length; i++){
-      if (a[i] != b[i])return (num(a[i]) < num(b[i]));
-    }
-    
-    err(le, "Something strange happened (input not trimical)");
+    return compInt(a.dat, b.dat, f);
+  }
+  
+  function gt(a, b){
+    return comp(a, b, function (a, b){return a > b;});
+  }
+  
+  function lt(a, b){
+    return comp(a, b, function (a, b){return a < b;});
+  }
+  
+  function ge(a, b){
+    return comp(a, b, function (a, b){return a >= b;});
+  }
+  
+  function le(a, b){
+    return comp(a, b, function (a, b){return a <= b;});
+  }
+  
+  function eq(a, b){
+    return a.dat === b.dat && a.neg === b.neg && a.exp === b.exp;
   }
   
   //// Basic operation functions ////
   
   function add(a, b, p){
-    if (p == -inf)return "0";
+    if (p === -inf)return zero();
     
-    var sign = "";
-    if (negp(a)){
-      if (!negp(b))return sub(b, remneg(a), p);
-      sign = "-";
-      a = remneg(a);
-      b = remneg(b);
-    } else if (negp(b))return sub(a, remneg(b), p);
+    var ne = false;
+    if (a.neg){
+      if (!b.neg)return sub(b, abs(a), p);
+      ne = true;
+    } else if (b.neg)return sub(a, abs(b), p);
     
-    var arr = pad(a, b);
+    var arr = padr(a, b);
     a = arr[0]; b = arr[1];
     
+    sum = real(ne, a.exp, addInt(a.dat, b.dat));
+    sum = normr(sum);
+    
+    return (p === udf)?sum:rnd(sum, p);
+  }
+  
+  // string a, b
+  function addInt(a, b){
+    var arr = padInt(a, b);
+    a = arr[0]; b = arr[1];
+    return addInt2(a, b);
+  }
+  
+  // string a, b same length
+  function addInt2(a, b){
     var small;
     var sum = "";
     var carry = 0;
     for (var i = a.length-1; i >= 0; i--){
-      if (a[i] == '.'){
-        sum = "." + sum;
-        continue;
-      }
       small = num(a[i]) + num(b[i]) + carry;
       if (small >= 10){
         sum = (small-10) + sum;
@@ -619,38 +637,44 @@
       }
     }
     if (carry == 1)sum = "1" + sum;
-    sum = sign + sum;
-    if (decp(sum))sum = trimr(sum);
-    
-    return (p == udf)?sum:rnd(sum, p);
+    return sum;
   }
   
   function sub(a, b, p){
     if (a == b)return "0";
     if (p == -inf)return "0";
     
-    if (negp(a)){
-      if (!negp(b))return add(a, "-" + b, p);
+    if (a.neg){
+      if (!b.neg)return add(a, neg(b), p);
       else {
         var c = a;
-        a = remneg(b);
-        b = remneg(c);
+        a = abs(b);
+        b = abs(c);
       }
-    } else if (negp(b))return add(a, remneg(b), p);
+    } else if (b.neg)return add(a, abs(b), p);
+    
+    if (gt(b, a))return neg(sub(b, a, p));
     
     var arr = pad(a, b);
     a = arr[0]; b = arr[1];
     
-    if (gt(b, a))return neg(sub(b, a, p));
+    var diff = real(false, a.exp, subInt(a.dat, b.dat));
+    diff = norm(diff);
     
+    return (p == udf)?diff:rnd(diff, p);
+  }
+  
+  function subInt(a, b){
+    var arr = padInt(a, b);
+    a = arr[0]; b = arr[1];
+    return subInt2(a, b);
+  }
+  
+  function subInt2(a, b){
     var small;
     var diff = "";
     var borrow = 0;
     for (var i = a.length-1; i >= 0; i--){
-      if (a[i] == '.'){
-        diff = "." + diff;
-        continue;
-      }
       small = 10 + num(a[i]) - num(b[i]) + borrow;
       if (small >= 10){
         diff = (small-10) + diff;
@@ -660,42 +684,13 @@
         borrow = -1;
       }
     }
-    diff = trim(diff);
-    
-    return (p == udf)?diff:rnd(diff, p);
+    return normInt(diff);
   }
   
   function mul(a, b, p){
-    if (a == "0" || b == "0")return "0";
-    if (p == -inf)return "0";
-    
-    var sign = "";
-    if (negp(a)){
-      a = remneg(a);
-      if (!negp(b))sign = "-";
-      else b = remneg(b);
-    } else if (negp(b)){
-      sign = "-";
-      b = remneg(b);
-    }
-    
-    var dec = 0;
-    if (decp(a)){
-      dec += declen(a);
-      a = remdot(a);
-      a = trimi(a);
-    }
-    if (decp(b)){
-      dec += declen(b);
-      b = remdot(b);
-      a = trimi(a);
-    }
-    
-    var prod = mulInt(a, b);
-    if (dec > 0)prod = left(prod, dec);
-    prod = sign + prod;
-    
-    return (p == udf)?prod:rnd(prod, p);
+    if (p === -inf)return zero();
+    var prod = real(a.neg !== b.neg, a.exp+b.exp, mulInt(a.dat, b.dat));
+    return (p === udf)?prod:rnd(prod, p);
   }
   
   // multiply two positive (non-zero) integers
@@ -798,101 +793,86 @@
     if (b == "0")err(div, "b cannot be 0");
     if (a == "0")return "0";                  
     if (b == "1")return rnd(a, p);
-    
     if (p == udf)p = prec;
     if (p == -inf)return "0";
-    
-    var sign = "";
-    if (negp(a)){
-      a = remneg(a);
-      if (!negp(b))sign = "-";
-      else b = remneg(b);
-    } else if (negp(b)){
-      sign = "-";
-      b = remneg(b);
-    }
-    
-    var move = Math.max(declen(a), declen(b));
-    if (move != 0){
-      a = right(a, move);
-      b = right(b, move);
-    }
-    
-    var quot = divLong(a, b, p);
-    return (quot == "0")?quot:sign + quot;
+    var quot = divLong(a.dat, b.dat, p+a.exp-b.exp);
+    quot = real(a.neg !== b.neg, quot.exp+a.exp-b.exp, quot.dat);
+    return quot;
   }
   
   // long division of positive (non-zero) integers a and b
   function divLong(a, b, p){
     var quot = "0";
     var curr = "";
-    var k;
-    var arr = ["0", b, add(b, b)];
-    var alen = a.length;
-    for (var i = 0; i < alen+p+1; i++){
-      if (i < alen)curr += a[i];
-      else {
-        if (curr == "0")break;
-        if (i == alen)quot += ".";
-        curr += "0";
-      }
-      curr = trimi(curr);
-      if (ge(curr, b)){
-        for (k = 2; ge(curr, arr[k]); k++){
-          if (k+1 == arr.length)arr[k+1] = add(arr[k], b);
-        }
-        quot += k-1;
-        curr = sub(curr, arr[k-1]);
+    var get = mknumget(a);
+    var qar = mkqarInt(b);
+    var al = len(a);
+    var bl = len(b);
+    var ex = al;
+    var cl, r, n;
+    while (true){
+      cl = len(curr);
+      n = (cl < bl)?bl-cl:1;
+      if (curr === "0")curr = normInt(get(n));
+      else curr += get(n);
+      r = qar(curr);
+      quot += r[0];
+      curr = r[1];
+      ex -= n;
+      // at this point a/b = quot*10^ex + curr*10^ex/b
+      if ((ex <= 0 && curr === "0") || ex <= -(p+1))break;
+    }
+    quot = real(false, ex, normInt(quot));
+    return rnd(quot, p);
+  }
+  
+  function mknumget(a){
+    var al = len(a);
+    var i = 0;
+    return function get(n){
+      var s;
+      if (i >= al){
+        s = nof(n, "0");
+      } else if (i+n > al){
+        s = sli(a, i) + nof(n-(al-i), "0");
       } else {
-        quot += "0";
+        s = sli(a, i, i+n);
       }
-    }
-    quot = trim(quot);
-    if (p < 0 && quot != "0"){
-      for (var i = -p-1; i >= 1; i--)quot += "0";
-    }
-    
-    return (quot == "0")?quot:rnd(quot, p);
+      i += n;
+      return s;
+    };
+  }
+  
+  function mkqarInt(b){
+    var arr = ["0", b, addInt(b, b)];
+    return function divInt(a){
+      var k = 1;
+      while (true){
+        if (a === arr[k])return [k, "0"];
+        if (gtInt(arr[k], a)){
+          if (k === 1)return [0, a];
+          return [k-1, subInt(a, arr[k-1])];
+        }
+        if (k+1 === len(arr))arr[k+1] = addInt(arr[k], b);
+        k++;
+      }
+    };
   }
   
   //// Rounding functions ////
   
   function rnd(a, p){
-    if (a == "0")return "0";
-    if (p == -inf)return "0";
+    if (zerop(a))return zero();
+    if (p == -inf)return zero();
     
-    var sign = "";
-    if (negp(a)){
-      a = remneg(a);
-      sign = "-";
-    }
-    
-    var alen = a.length;
-    var adot = a.indexOf(".");
-    
-    if (p == 0 || p == udf){
-      if (adot == -1)return sign + a;
-      var round = a.substring(0, adot);
-      if (num(a[adot+1]) >= 5)round = addOne(round);
-    } else if (p < 0){
-      if (adot == -1)adot = alen;
-      if (adot+p <= -1)return "0";
-      
-      var round = a.substring(0, adot+p);
-      if (round == "")round = "0";
-      if (num(a[adot+p]) >= 5)round = addOne(round);
-      if (round != "0"){
-        for (var d = -p; d >= 1; d--)round += "0";
-      }
-    } else {
-      if (adot == -1 || adot+p+1 >= alen)return sign + a;
-      
-      var round = a.substring(0, adot+p+1);
-      if (num(a[adot+p+1]) >= 5)round = addOneDec(round);
-      round = trimn(round);
-    }
-    
-    return (round == "0")?round:sign + round;
+    if (a.exp+p >= 0)return a;
+    var ad = a.dat;
+    if (ad.length+a.exp+p < 0)return zero();
+    var n = num(ad[ad.length+a.exp+p]);
+    var ad = sli(ad, 0, ad.length+a.exp+p);
+    if (ad === "")ad = "0";
+    if (n >= 5)ad = addOne(ad);
+    return normr(real(a.neg, -p, ad));
   }
   
   function cei(a, p){
@@ -1020,31 +1000,10 @@
   
   // add 1 to non-negative integer
   function addOne(a){
-    for (var i = a.length-1; i >= 0; i--){
-      if (a[i] != '9'){
-        var sum = a.substring(0, i) + (num(a[i])+1);
-        for (var j = a.length-1-i; j >= 1; j--)sum += "0";
-        return sum;
-      }
-    }
-    sum = "1";
-    for (var i = a.length; i >= 1; i--)sum += "0";
-    return sum;
-  }
-  
-  // add 1 to last place value in decimal
-  function addOneDec(a){
-    for (var i = a.length-1; i >= 0; i--){
-      if (a[i] == '.')continue;
-      if (a[i] != '9'){
-        var sum = a.substring(0, i) + (num(a[i])+1);
-        for (var j = a.indexOf(".")-1-i; j >= 1; j--)sum += "0";
-        return sum;
-      }
-    }
-    sum = "1";
-    for (var i = a.indexOf("."); i >= 1; i--)sum += "0";
-    return sum;
+    var nines = countr("9", a);
+    if (nines === a.length)return "1" + nof(a.length, "0");
+    var pos = a.length-1-nines; // pos of first non-nine number
+    return sli(a, 0, pos) + (num(a[pos])+1) + nof(nines, "0");
   }
   
   //// Extended operation functions ////
@@ -1735,12 +1694,11 @@
   //// Other operation functions ////
   
   function abs(a){
-    return negp(a)?remneg(a):a;
+    return (a.neg)?real(false, a.exp, a.dat):a;
   }
   
   function neg(a){
-    if (a == "0")return a;
-    return negp(a)?remneg(a):("-" + a);
+    return zerop(a)?a:real(!a.neg, a.exp, a.dat);
   }
   
   //// Mathematical constants ////
@@ -2121,12 +2079,12 @@
     realint: realint,
     
     vldp: vldp,
-    trim: trim,
+    /*trim: trim,
     trimn: trimn,
     trimi: trimi,
     trimd: trimd,
     trimdl: trimdl,
-    trimr: trimr,
+    trimr: trimr,*/
     
     posp: posp,
     negp: negp,
@@ -2136,14 +2094,14 @@
     oddp: oddp,
     div5p: div5p,
     
-    posdot: posdot,
+    /*posdot: posdot,
     remdot: remdot,
     intlen: intlen,
     declen: declen,
     intpt: intpt,
     decpt: decpt,
     sign: sign,
-    remneg: remneg,
+    remneg: remneg,*/
     pad: pad,
     zero: zero,
     diff: diff,
@@ -2151,8 +2109,8 @@
     nsiz: nsiz,
     chke: chke,
     
-    num2flt: num2flt,
-    flt2num: flt2num,
+    /*num2flt: num2flt,
+    flt2num: flt2num,*/
     
     left: left,
     right: right,
