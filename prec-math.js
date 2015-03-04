@@ -10,17 +10,17 @@
   var num = Number;
   var str = String;
   
-  var strp = $.strp;
+  var strp = $.strp_;
   var inp = $.inp;
   
   var al = $.al;
   
-  var len = $.len;
+  var len = $.len_;
   
-  var nof = $.nof;
+  var nof = $.nofStr;
   
   var apl = $.apl;
-  var sli = $.sli;
+  var sli = $.sliStr;
   var stf = $.stf;
   
   var spd = $.spd;
