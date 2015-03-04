@@ -10,7 +10,7 @@
   var num = Number;
   var str = String;
   
-  var strp = $.strp_;
+  var strp = $.strp;
   var inp = $.inp;
   
   var al = $.al;
