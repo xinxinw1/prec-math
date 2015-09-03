@@ -1,4 +1,4 @@
-/***** Perfectly Precise Math Library 4.3.1 *****/
+/***** Perfectly Precise Math Library 4.3.2 *****/
 
 /* require tools 4.1.5 */
 
@@ -2012,6 +2012,10 @@
     return x?neg(a):a;
   }
   
+  function mod(a, b){
+    return qar(a, b)[1];
+  }
+  
   // @param Number n
   // @param Number m
   // @return String prod
@@ -2202,6 +2206,7 @@
     ln10: ln10,
     
     qar: qar,
+    mod: mod,
     mulran: mulran,
     frac: frac,
     sfrac: sfrac,
