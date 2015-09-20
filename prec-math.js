@@ -1,4 +1,4 @@
-/***** Perfectly Precise Math Library 4.3.2 *****/
+/***** Perfectly Precise Math Library 5.0.0 *****/
 
 /* require tools 4.1.5 */
 
