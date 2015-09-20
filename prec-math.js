@@ -1,6 +1,6 @@
-/***** Perfectly Precise Math Library 5.0.0 *****/
+/***** Perfectly Precise Math Library 5.0 *****/
 
-/* require tools 4.1.5 */
+/* require tools 4.7.0 */
 
 (function (udf){
   ////// Import //////
