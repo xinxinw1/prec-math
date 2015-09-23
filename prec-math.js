@@ -209,18 +209,21 @@
   
   function pad(a, b){
     var arr = matexp(a, b);
-    a = arr[0]; b = arr[1];
-    var adat = a.dat; var bdat = b.dat;
-    var alen = len(adat); var blen = len(bdat);
-    if (alen > blen){
-      for (var i = alen-blen; i >= 1; i--)bdat = "0" + bdat;
-      return [a, N(b.neg, bdat, b.exp)];
-    } else if (blen > alen){
-      for (var i = blen-alen; i >= 1; i--)adat = "0" + adat;
-      return [N(a.neg, adat, a.exp), b];
-    }
-    return arr;
+    var arr2 = justpad(arr[0].dat, arr[1].dat);
+    return [N(a.neg, arr2[0], a.exp), N(b.neg, arr2[1], b.exp)];
   }
+  
+  // justpad("253", "2") -> ["253", "002"]
+  function justpad(a, b){
+    var alen = len(a); var blen = len(b);
+    if (alen > blen){
+      for (var i = alen-blen; i >= 1; i--)b = "0" + b;
+    } else if (blen > alen){
+      for (var i = blen-alen; i >= 1; i--)a = "0" + a;
+    }
+    return [a, b];
+  }
+  
   
   //// Sign functions ////
   
@@ -320,11 +323,11 @@
       b = neg(c);
     } else if (negp(b))return add(a, neg(b), p);
     
+    if (gt(b, a))return neg(sub(b, a, p));
+    
     var arr = pad(a, b);
     var exp = arr[0].exp;
-    a = arr[0]; b = arr[1];
-    
-    if (gt(b, a))return neg(sub(b, a, p));
+    a = arr[0].dat; b = arr[1].dat;
     
     var small;
     var diff = "";
