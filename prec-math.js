@@ -11,6 +11,7 @@
   var str = String;
   
   var udfp = $.udfp;
+  var nump = $.nump;
   var strp = $.strp;
   
   var inp = $.inp;
@@ -19,6 +20,7 @@
   var pos = $.posStrStr;
   var sli = $.sliStr;
   var las = $.las_;
+  var fst = $.fst_;
   
   var typ = $.T.typ;
   var dat = $.T.dat;
@@ -31,102 +33,68 @@
   
   //// Converters ////
   
-  // mknum("35.35") -> N(false, "3535", -2)
-  function mknum(a){
-    var neg = false; var dat = remdotstr(a);
-    if (negpstr(a)){
-      neg = true;
-      dat = sli(dat, 1);
-    }
-    return N(neg, dat, -declenstr(a));
+  // mkreal("35.35") -> N(false, "3535", -2)
+  // mkreal("0.000012") -> N(false, "12", -6)
+  // mkreal("-352534000") -> N(true, "352534", 3)
+  // mkreal("") -> zero()
+  function mkreal(a){
+    var dat = remdotStr(a);
+    var neg = negpStr(a);
+    if (neg)dat = sli(dat, 1);
+    var exp = -declenStr(a);
+    return chktrim(N(neg, dat, exp));
   }
   
+  // tostr(mkreal(a)) -> a
   function tostr(a){
-    var b = rightstr(a.dat, a.exp);
-    if (negp(a))return negstr(b);
+    var b = rightStr(a.dat, a.exp);
+    if (negp(a))return negStr(b);
     return b;
   }
   
-  function negstr(a){
-    if (a == "0")return a;
-    return "-" + a;
-  }
-  
-  function leftstr(a, n){ // 32.44 -> 3.244
-    if (n == 0 || a == "0")return a;
-    if (n < 0)return rightstr(a, -n);
-    var alen = a.length;
-    var zeros = n-alen;
-    if (zeros >= 0){
-      for (var i = zeros; i >= 1; i--)a = "0" + a;
-      return "0." + a;
-    }
-    return sli(a, 0, alen-n) + "." + sli(a, alen-n, alen);
-  }
-  
-  function rightstr(a, n){ // 32.44 -> 324.4
-    if (n == 0 || a == "0")return a;
-    if (n < 0)return leftstr(a, -n);
-    for (var i = n; i >= 1; i--)a += "0";
-    return a;
-  }
-  
-  function negpstr(a){
-    return a[0] == '-';
-  }
-  
-  function remdotstr(a){
-    var dot = pos(".", a);
-    if (dot == -1)return a;
-    return sli(a, 0, dot) + sli(a, dot+1, len(a));
-  }
-  
-  function declenstr(a){
-    var dot = pos(".", a);
-    if (dot == -1)return 0;
-    return len(a)-1-dot;
-  }
-  
-  function vldpstr(a){
-    return strp(a) && /^-?[0-9]+(\.[0-9]+)?$/.test(a);
-  }
-  
   // real("35.35") -> N(false, "3535", -2)
-  // real(35.35)
+  // real(35.35) -> N(false, "3535", -2)
+  // real(N(false, "35", 2)) -> N(false, "35", 2)
   function real(a){
-    if (tagp(a)){
-      if (isa("num", a))return trim(a);
-      return false;
+    if (realp(a))return chktrim(a);
+    if (nump(a))return real(str(a));
+    if (strp(a)){
+      if (!vldpStr(a))return false;
+      return mkreal(a);
     }
-    a = str(a);
-    if (!vldpstr(a))return false;
-    return trim(mknum(a));
+    return false;
   }
   
+  // realint
   function realint(a){
-    if (tagp(a)){
-      if (isa("num", a)){
-        a = trim(a);
-        if (!intp(a))return false;
-      }
-      return false;
+    if (realp(a)){
+      a = chktrim(a);
+      if (!intp(a))return false;
+      return num(tostr(a));
     }
-    a = str(a);
-    if (!vldp(a))return false;
-    a = trim(a);
-    if (!intp(a))return false;
-    return num(a);
+    if (nump(a))return realint(str(a));
+    if (strp(a)){
+      if (!vldpStr(a))return false;
+      a = mkreal(a);
+      if (!intp(a))return false;
+      return num(tostr(a));
+    }
+    return false;
   }
   
   //// Builders ////
   
   // N(true, "153453", -3) -> -153.453
   function N(neg, dat, exp){
-    return {type: "num", neg: neg, exp: exp, dat: dat};
+    return {type: "real", neg: neg, exp: exp, dat: dat};
   }
   
   function zero(){
-    return N(false, "0", 0);
+    return N(false, "", 0);
+  }
+  
+  function realp(a){
+    return tagp(a) && isa("real", a);
   }
   
   ////// Default precision //////
@@ -143,7 +111,264 @@
   
   ////// Real number functions //////
   
+  //// Str Functions ////
+  
+  function negStr(a){
+    if (a == "")return a;
+    return "-" + a;
+  }
+  
+  function leftStr(a, n){ // 32.44 -> 3.244
+    if (n == 0 || a == "")return a;
+    if (n < 0)return rightStr(a, -n);
+    var alen = a.length;
+    var zeros = n-alen;
+    if (zeros >= 0){
+      for (var i = zeros; i >= 1; i--)a = "0" + a;
+      return "0." + a;
+    }
+    return sli(a, 0, alen-n) + "." + sli(a, alen-n, alen);
+  }
+  
+  function rightStr(a, n){ // 32.44 -> 324.4
+    if (n == 0 || a == "")return a;
+    if (n < 0)return leftStr(a, -n);
+    return rightInt(a, n);
+  }
+  
+  function negpStr(a){
+    return a[0] == '-';
+  }
+  
+  function remdotStr(a){
+    var dot = pos(".", a);
+    if (dot == -1)return a;
+    return sli(a, 0, dot) + sli(a, dot+1, len(a));
+  }
+  
+  function declenStr(a){
+    var dot = pos(".", a);
+    if (dot == -1)return 0;
+    return len(a)-1-dot;
+  }
+  
+  function vldpStr(a){
+    return strp(a) && /^-?[0-9]+(\.[0-9]+)?$/.test(a);
+  }
+  
+  //// Int Functions ////
+  
+  function rightInt(a, n){ // 3244 -> 324400
+    for (var i = n; i >= 1; i--)a += "0";
+    return a;
+  }
+  
+  function trimlInt(a){
+    if (a[0] !== '0')return a;
+    for (var i = 0; i < a.length; i++){
+      if (a[i] !== '0')return sli(a, i);
+    }
+    return "";
+  }
+  
+  function gtInt(a, b){ // is a > b ?
+    if (len(a) !== len(b))return len(a) > len(b);
+    for (var i = 0; i < len(a); i++){
+      if (a[i] !== b[i])return num(a[i]) > num(b[i]);
+    }
+    err(gtInt, "Should never reach here");
+  }
+  
+  function geInt(a, b){ // is a >= b ?
+    return !gtInt(b, a); // !(b > a) == b <= a == a >= b
+  }
+  
+  function addInt(a, b){
+    if (b.length > a.length)return addInt(b, a); // so a always has greater length
+    var small;
+    var sum = "";
+    var carry = 0;
+    for (var i = a.length-1, j = b.length-1; i >= 0; i--, j--){
+      small = num(a[i]) + ((j < 0)?0:num(b[j])) + carry;
+      if (small >= 10){
+        sum = (small-10) + sum;
+        carry = 1;
+      } else {
+        sum = small + sum;
+        carry = 0;
+      }
+    }
+    if (carry == 1)sum = "1" + sum;
+    return sum;
+  }
+  
+  function add1Int(a){
+    for (var i = a.length-1; i >= 0; i--){
+      if (a[i] !== '9'){
+        var sum = a.substring(0, i) + (num(a[i])+1);
+        for (var j = a.length-1-i; j >= 1; j--)sum += "0";
+        return sum;
+      }
+    }
+    sum = "1";
+    for (var i = a.length; i >= 1; i--)sum += "0";
+    return sum;
+  }
+  
+  function subInt(a, b){
+    if (b.length > a.length)err(subInt, "Answer is negative for a = $1 and b = $2", a, b);
+    var small;
+    var diff = "";
+    var borrow = 0;
+    for (var i = a.length-1, j = b.length-1; i >= 0; i--, j--){
+      small = 10 + num(a[i]) - ((j < 0)?0:num(b[j])) + borrow;
+      if (small >= 10){
+        diff = (small-10) + diff;
+        borrow = 0;
+      } else {
+        diff = small + diff;
+        borrow = -1;
+      }
+    }
+    return trimlInt(diff);
+  }
+  
+  // multiply two positive (non-zero) integers
+  function mulInt(a, b){
+    if (a.length <= 7 && b.length <= 7)return str(num(a)*num(b));
+    if (a.length <= 200 || b.length <= 200)return mulLong(a, b);
+    return mulKarat(a, b);
+  }
+  
+  // long multiplication; for 8-200 digits
+  function mulLong(a, b){
+    if (b.length > a.length)return mulLong(b, a);
+    
+    var prod = "0";
+    var curra, currb, curr, small, len, carry;
+    for (var i = b.length; i > 0; i -= 7){
+      currb = num(b.substring(i-7, i));
+      if (currb == 0)continue;
+      curr = ""; carry = 0;
+      for (var f = (b.length-i)/7; f >= 1; f--)curr += "0000000";
+      for (var j = a.length; j > 0; j -= 7){
+        curra = num(a.substring(j-7, j));
+        if (curra == 0){
+          if (carry != 0){
+            small = str(carry);
+          } else {
+            if (j-7 > 0)curr = "0000000" + curr;
+            continue;
+          }
+        } else {
+          small = str(currb * curra + carry);
+        }
+        len = small.length;
+        if (len > 7){
+          curr = small.substring(len-7, len) + curr;
+          carry = num(small.substring(0, len-7));
+        } else {
+          curr = small + curr;
+          if (j-7 > 0){
+            for (var h = 7-len; h >= 1; h--)curr = "0" + curr;
+          }
+          carry = 0;
+        }
+      }
+      if (carry != 0)curr = carry + curr;
+      prod = addInt(prod, curr);
+    }
+    
+    return prod;
+  }
+  
+  // Karatsuba multiplication; for more than 200 digits
+  // http://en.wikipedia.org/wiki/Karatsuba_algorithm
+  function mulKarat(a, b){
+    var alen = a.length;
+    var blen = b.length;
+    
+    if (blen > alen)return mulKarat(b, a);
+    
+    // Math.min(alen, blen) = blen
+    if (blen <= 200)return mulLong(a, b);
+    
+    if (alen != blen){
+      /*
+      a = a1*10^m + a0
+      a*b = (a1*10^m + a0)*b
+          = (a1*b)*10^m + a0*b
+      */
+      var m = (alen > 2*blen)?Math.ceil(alen/2):(alen-blen);
+      var a1 = a.substring(0, alen-m);
+      var a0 = trimlInt(a.substring(alen-m, alen));
+      return addInt(rightInt(mulKarat(a1, b), m), mulKarat(a0, b));
+    }
+    
+    /*
+    a = a1*10^m + a0
+    b = b1*10^m + b0
+    
+    a*b = (a1*10^m + a0)*(b1*10^m + b0)
+        = (a1*b1)*10^(2*m) + (a1*b0 + a0*b1)*10^m + a0*b0
+        = (a1*b1)*10^(2*m) + ((a1+a0)*(b1+b0) - a1*b1 - a0*b0)*10^m + a0*b0
+        = z2*10^(2*m) + z1*10^m + z0
+    */
+    
+    m = Math.ceil(alen/2);
+    
+    var a1 = a.substring(0, alen-m);
+    var a0 = trimlInt(a.substring(alen-m, alen));
+    var b1 = b.substring(0, blen-m);
+    var b0 = trimlInt(b.substring(blen-m, blen));
+    
+    var z2 = mulKarat(a1, b1);
+    var z0 = mulKarat(a0, b0);
+    var z1 = subInt(subInt(mulKarat(addInt(a1, a0), addInt(b1, b0)), z2), z0);
+    
+    return addInt(addInt(rightInt(z2, 2*m), rightInt(z1, m)), z0);
+  }
+  
+  // long division of positive (non-zero) integers a and b
+  function divInt(a, b, p){
+    if (udfp(p))p = prec;
+    if (p == -inf)return zero();
+    var quot = "";
+    var curr = "";
+    var exp = 0;
+    var k, i;
+    var arr = ["", b, addInt(b, b)];
+    var alen = a.length;
+    for (i = 0; i < alen+p+1; i++){
+      if (i < alen){
+        if (curr !== "" || a[i] !== '0')curr += a[i];
+      } else {
+        if (curr === "")break;
+        curr += "0";
+        if (i >= alen)exp--;
+      }
+      if (geInt(curr, b)){
+        for (k = 2; geInt(curr, arr[k]); k++){
+          if (k+1 == arr.length)arr[k+1] = addInt(arr[k], b);
+        }
+        quot += k-1;
+        curr = subInt(curr, arr[k-1]); // might return ""
+      } else {
+        if (quot != "")quot += "0";
+      }
+    }
+    if (quot === "")return zero();
+    if (p < 0){
+      for (var j = -p-1; j >= 1; j--)quot += "0";
+    }
+    return rnd(chktrimr(N(false, quot, exp)), p);
+  }
+  
   //// Predicates ////
+  
+  function zerop(a){
+    return a.dat === "";
+  }
   
   function negp(a){
     return a.neg;
@@ -182,11 +407,35 @@
     return las(a.dat) === '0';
   }
   
+  function needtriml(a){
+    return fst(a.dat) === '0';
+  }
+  
   function trimr(a){
     var n = cntr("0", a.dat);
     return N(a.neg, sli(a.dat, 0, len(a.dat)-n), a.exp+n);
   }
   
+  function triml(a){
+    var n = cntl("0", a.dat);
+    return N(a.neg, sli(a.dat, n), a.exp);
+  }
+  
+  function chktrimr(a){
+    if (needtrimr(a))return trimr(a);
+    return a;
+  }
+  
+  function chktriml(a){
+    if (needtriml(a))return triml(a);
+    return a;
+  }
+  
+  function chktrim(a){
+    return chktriml(chktrimr(a));
+  }
+  
+  // count right
   function cntr(x, a){
     for (var i = len(a)-1; i >= 0; i--){
       if (a[i] !== x)return len(a)-1-i;
@@ -194,10 +443,33 @@
     return 0;
   }
   
+  function cntl(x, a){
+    for (var i = 0; i < len(a); i++){
+      if (a[i] !== x)return i;
+    }
+    return len(a);
+  }
+  
+  function right(a, n){
+    if (zerop(a))return a;
+    return N(a.neg, a.dat, a.exp+n);
+  }
+  
+  function left(a, n){
+    return right(a, -n);
+  }
+  
+  function wneg(a, neg){
+    if (zerop(a))return a;
+    return N(neg, a.dat, a.exp);
+  }
+  
   function matexp(a, b){ // match exponents
     if (a.exp > b.exp){
       var adat = a.dat;
-      for (var i = a.exp-b.exp; i >= 1; i--)adat += "0";
+      if (adat !== ""){
+        for (var i = a.exp-b.exp; i >= 1; i--)adat += "0";
+      }
       return [N(a.neg, adat, b.exp), b];
     }
     if (a.exp < b.exp){
@@ -207,7 +479,7 @@
     return [a, b];
   }
   
-  function pad(a, b){
+  /*function pad(a, b){
     var arr = matexp(a, b);
     a = arr[0]; b = arr[1];
     var adat = a.dat; var bdat = b.dat;
@@ -220,7 +492,7 @@
       return [N(a.neg, adat, a.exp), b];
     }
     return arr;
-  }
+  }*/
   
   //// Sign functions ////
   
@@ -229,6 +501,7 @@
   }
   
   function neg(a){
+    if (zerop(a))return a;
     return N(!a.neg, a.dat, a.exp);
   }
   
@@ -249,16 +522,8 @@
         return false; // -5 > 3
       }
     } else if (negp(b))return true; // 5 > -10
-    
     var arr = matexp(a, b);
-    a = arr[0].dat; b = arr[1].dat;
-    if (len(a) != len(b))return len(a) > len(b);
-    
-    for (var i = 0; i < len(a); i++){
-      if (a[i] !== b[i])return num(a[i]) > num(b[i]);
-    }
-    
-    err(gt, "Should never reach here");
+    return gtInt(arr[0].dat, arr[1].dat);
   }
   
   function ge(a, b){ // is a >= b ?
@@ -276,7 +541,7 @@
   //// Basic operation functions ////
   
   function add(a, b, p){
-    if (p == -inf)return "0";
+    if (p == -inf)return zero();
     
     var sign = false;
     if (negp(a)){
@@ -286,32 +551,14 @@
       b = neg(b);
     } else if (negp(b))return sub(a, neg(b), p);
     
-    var arr = pad(a, b);
-    var exp = arr[0].exp;
-    a = arr[0].dat; b = arr[1].dat;
-    
-    var small;
-    var sum = "";
-    var carry = 0;
-    for (var i = len(a)-1; i >= 0; i--){
-      small = num(a[i]) + num(b[i]) + carry;
-      if (small >= 10){
-        sum = (small-10) + sum;
-        carry = 1;
-      } else {
-        sum = small + sum;
-        carry = 0;
-      }
-    }
-    if (carry == 1)sum = "1" + sum;
-    sum = N(sign, sum, exp);
-    if (needtrimr(sum))sum = trimr(sum);
+    var arr = matexp(a, b);
+    var sum = chktrimr(N(sign, addInt(arr[0].dat, arr[1].dat), arr[0].exp));
     return udfp(p)?sum:rnd(sum, p);
   }
   
   function sub(a, b, p){
-    if (is(a, b))return "0";
-    if (p == -inf)return "0";
+    if (is(a, b))return zero();
+    if (p == -inf)return zero();
     
     if (negp(a)){
       if (!negp(b))return add(a, neg(b), p);
@@ -320,44 +567,89 @@
       b = neg(c);
     } else if (negp(b))return add(a, neg(b), p);
     
-    var arr = pad(a, b);
-    var exp = arr[0].exp;
-    a = arr[0]; b = arr[1];
-    
     if (gt(b, a))return neg(sub(b, a, p));
     
-    var small;
-    var diff = "";
-    var borrow = 0;
-    for (var i = len(a)-1; i >= 0; i--){
-      small = 10 + num(a[i]) - num(b[i]) + borrow;
-      if (small >= 10){
-        diff = (small-10) + diff;
-        borrow = 0;
-      } else {
-        diff = small + diff;
-        borrow = -1;
-      }
-    }
-    diff = trim(diff);
+    var arr = matexp(a, b);
+    var diff = chktrimr(N(false, subInt(arr[0].dat, arr[1].dat), arr[0].exp));
+    // cannot be zero here
+    return udfp(p)?diff:rnd(diff, p);
+  }
+  
+  function mul(a, b, p){
+    if (zerop(a) || zerop(b))return zero();
+    if (p == -inf)return zero();
     
-    return (p == udf)?diff:rnd(diff, p);
+    var sign = negp(a) != negp(b);
+    if (negp(a))a = neg(a);
+    if (negp(b))b = neg(b);
+    
+    var prod = chktrimr(N(sign, mulInt(a.dat, b.dat), a.exp+b.exp));
+    return udfp(p)?prod:rnd(prod, p);
+  }
+  
+  function div(a, b, p){
+    if (zerop(b))err(div, "b cannot be 0");
+    if (zerop(a))return a;
+    if (udfp(p))p = prec;
+    if (p == -inf)return zero();
+    
+    var sign = negp(a) != negp(b);
+    if (negp(a))a = neg(a);
+    if (negp(b))b = neg(b);
+    
+    return wneg(right(divInt(a.dat, b.dat, p), a.exp+b.exp), sign);
+  }
+  
+  //// Rounding functions ////
+  
+  function rnd(a, p){
+    if (zerop(a))return a;
+    if (p == -inf)return zero();
+    if (udfp(p))p = 0;
+    var pos = len(a.dat)+a.exp+p;
+    if (pos < 0)return zero();
+    if (pos >= len(a.dat))return a;
+    var round = sli(a.dat, 0, pos);
+    if (num(a.dat[pos]) >= 5)round = add1Int(round);
+    if (round === "")return zero();
+    return chktrimr(N(a.neg, round, -p));
   }
   
   ////// R object exposure //////
   
   var R = {
-    mknum: mknum,
+    mkreal: mkreal,
     tostr: tostr,
+    real: real,
+    realint: realint,
+    
     num: N,
+    zero: zero,
+    realp: realp,
+    
+    gtInt: gtInt,
+    addInt: addInt,
+    subInt: subInt,
+    mulInt: mulInt,
+    divInt: divInt,
     
     trimr: trimr,
+    triml: triml,
     matexp: matexp,
-    pad: pad,
+    
+    is: is,
     
     gt: gt,
+    ge: ge,
+    lt: lt,
+    le: le,
     
-    add: add
+    add: add,
+    sub: sub,
+    mul: mul,
+    div: div,
+    
+    rnd: rnd
   };
   
   if (nodep)module.exports = R;
