@@ -33,11 +33,11 @@
   
   //// Converters ////
   
-  // mkreal("35.35") -> N(false, "3535", -2)
-  // mkreal("0.000012") -> N(false, "12", -6)
-  // mkreal("-352534000") -> N(true, "352534", 3)
-  // mkreal("") -> zero()
-  function mkreal(a){
+  // mknum("35.35") -> N(false, "3535", -2)
+  // mknum("0.000012") -> N(false, "12", -6)
+  // mknum("-352534000") -> N(true, "352534", 3)
+  // mknum("") -> zero()
+  function mknum(a){
     var dat = remdotStr(a);
     var neg = negpStr(a);
     if (neg)dat = sli(dat, 1);
@@ -45,7 +45,12 @@
     return chktrim(N(neg, dat, exp));
   }
   
-  // tostr(mkreal(a)) -> a
+  // a = positive js int
+  function mknumint(a){
+    return chktrimr(N(false, str(a), 0));
+  }
+  
+  // tostr(mknum(a)) -> a
   function tostr(a){
     var b = rightStr(a.dat, a.exp);
     if (negp(a))return negStr(b);
@@ -60,7 +65,7 @@
     if (nump(a))return real(str(a));
     if (strp(a)){
       if (!vldpStr(a))return false;
-      return mkreal(a);
+      return mknum(a);
     }
     return false;
   }
@@ -75,7 +80,7 @@
     if (nump(a))return realint(str(a));
     if (strp(a)){
       if (!vldpStr(a))return false;
-      a = mkreal(a);
+      a = mknum(a);
       if (!intp(a))return false;
       return num(tostr(a));
     }
@@ -86,11 +91,15 @@
   
   // N(true, "153453", -3) -> -153.453
   function N(neg, dat, exp){
-    return {type: "real", neg: neg, exp: exp, dat: dat};
+    return {neg: neg, exp: exp, dat: dat, type: "real"};
   }
   
   function zero(){
     return N(false, "", 0);
+  }
+  
+  function one(){
+    return N(false, "1", 0);
   }
   
   function realp(a){
@@ -494,6 +503,38 @@
     return arr;
   }*/
   
+  function siz(a){
+    if (zerop(a))return -inf;
+    return len(a.dat)+a.exp;
+  }
+  
+  function nsiz(a){
+    return siz(a)-1;
+  }
+  
+  // number of sig figs in a
+  function fig(a){
+    return len(a.dat);
+  }
+  
+  // input a = num(a);
+  function chke(a){
+    a = str(a);
+    
+    if (a == "Infinity")a = "1.7976931348623157e+308";
+    else if (a == "-Infinity")a = "-1.7976931348623157e+308";
+    
+    var pos = a.indexOf("e");
+    if (pos == -1)return mknum(a);
+    
+    var front = sli(a, 0, pos);
+    var sign = a[pos+1];
+    var back = num(sli(a, pos+2));
+    
+    if (sign == '+')return right(mknum(front), back);
+    if (sign == '-')return left(mknum(front), back);
+  }
+  
   //// Sign functions ////
   
   function abs(a){
@@ -596,13 +637,13 @@
     var sign = negp(a) != negp(b);
     if (negp(a))a = neg(a);
     if (negp(b))b = neg(b);
-    
-    return wneg(right(divInt(a.dat, b.dat, p), a.exp+b.exp), sign);
+    // x-(a.exp-b.exp) = p --> x = p+a.exp-b.exp
+    return wneg(right(divInt(a.dat, b.dat, p+a.exp-b.exp), a.exp-b.exp), sign);
   }
   
   //// Rounding functions ////
   
-  function rnd(a, p){
+  function rndf(a, p, f){
     if (zerop(a))return a;
     if (p == -inf)return zero();
     if (udfp(p))p = 0;
@@ -610,25 +651,139 @@
     if (pos < 0)return zero();
     if (pos >= len(a.dat))return a;
     var round = sli(a.dat, 0, pos);
-    if (num(a.dat[pos]) >= 5)round = add1Int(round);
+    if (f(num(a.dat[pos])))round = add1Int(round);
     if (round === "")return zero();
     return chktrimr(N(a.neg, round, -p));
+  }
+  
+  function rnd(a, p){
+    return rndf(a, p, function (n){return n >= 5;});
+  }
+  
+  function cei(a, p){
+    if (negp(a))return neg(flr(neg(a), p));
+    return rndf(a, p, function (n){return true;});
+  }
+  
+  function flr(a, p){
+    if (negp(a))return neg(cei(neg(a), p));
+    return rndf(a, p, function (n){return false;});
+  }
+  
+  function trn(a, p){
+    return rndf(a, p, function (n){return false;});
+  }
+  
+  //// Decimal functions ////
+  
+  // return sub(a, trn(a, p))
+  // tostr(dec(mknum("23.45215", -1))) -> 3.45215
+  // tostr(dec(mknum("23.45215", 0))) -> 0.45215
+  // tostr(dec(mknum("23.45215", 1))) -> 0.05215
+  function dec(a, p){
+    if (p == -inf)return zero();
+    if (udfp(p))p = 0;
+    var pos = len(a.dat)+a.exp+p;
+    if (pos < 0)return a;
+    if (pos >= len(a.dat))return zero();
+    var decimal = sli(a.dat, pos);
+    if (decimal === "")return zero();
+    return chktriml(N(a.neg, decimal, a.exp));
+  }
+  
+  //// Extended operation functions ////
+  
+  function exp(a, p){
+    if (zerop(a))return rnd(one(), p);
+    if (p == udf)p = prec;
+    if (p == -inf)return zero();
+    
+    if (negp(a))return div(one(), expPos(neg(a), p+2), p);
+    return expPos(a, p);
+  }
+  
+  // exp positive
+  function expPos(a, p){
+    if (intp(a))return expInt(a, p);
+    
+    var fl = trn(a);
+    var d = dec(a);
+    if (gt(d, mknum("0.5"))){
+      d = sub(d, "1");
+      fl = add(fl, "1");
+    }
+    
+    if (zerop(fl))return expDec(a, p);
+    var expfl = expInt(fl, p+2);
+    return mul(expfl, expDec(a, p+2+siz(expfl)), p);
+  }
+  
+  // a is a real obj
+  function expInt(a, p){
+    var an = num(tostr(a));
+    if (an == 1)return e(p);
+    return powDec(e(p+2+(an-1)*(siz(a)+1)), an, p);
+  }
+  
+  function expDec(a, p){
+    var d = dec(a);
+    var dl = fig(d); // dec length
+    if (dl <= 30)return expTaylorFrac(a, p);
+    return expTaylorTerms(a, p);
+  }
+  
+  // Taylor Series with big fraction
+  function expTaylorFrac(a, p){
+    if (decp(a))a = rnd(a, p+2);
+    var frac1 = add(a, one());
+    var frac2 = one();
+    var pow = a;
+    for (var i = 2; true; i++){
+      frac1 = mul(frac1, mknumint(i));
+      pow = mul(pow, a);
+      frac1 = add(frac1, pow);
+      frac2 = mul(frac2, mknumint(i));
+      if (nsiz(frac2)-siz(pow)-2 >= p)break;
+    }
+    
+    return div(frac1, frac2, p);
+  }
+  
+  // Taylor Series adding term by term
+  function expTaylorTerms(a, p){
+    var ar = rnd(a, p+3);
+    var pow = ar;
+    var fact = one();
+    var frac = one();
+    var exp = add(ar, one());
+    for (var i = 2; true; i++){
+      pow = mul(pow, ar, p+3);
+      fact = mul(fact, mknumint(i));
+      frac = div(pow, fact, p+3);
+      if (zero(frac, p+1))break;
+      exp = add(exp, frac);
+    }
+    
+    return rnd(exp, p);
   }
   
   ////// R object exposure //////
   
   var R = {
-    mkreal: mkreal,
+    mknum: mknum,
+    mknumint: mknumint,
     tostr: tostr,
     real: real,
     realint: realint,
     
     num: N,
     zero: zero,
+    one: one,
     realp: realp,
     
     gtInt: gtInt,
     addInt: addInt,
+    add1Int: add1Int,
     subInt: subInt,
     mulInt: mulInt,
     divInt: divInt,
@@ -636,6 +791,10 @@
     trimr: trimr,
     triml: triml,
     matexp: matexp,
+    siz: siz,
+    nsiz: nsiz,
+    fig: fig,
+    chke: chke,
     
     is: is,
     
@@ -649,7 +808,19 @@
     mul: mul,
     div: div,
     
-    rnd: rnd
+    rndf: rndf,
+    rnd: rnd,
+    cei: cei,
+    flr: flr,
+    trn: trn,
+    
+    dec: dec,
+    
+    exp: exp,
+    expPos: expPos,
+    expDec: expDec,
+    expTaylorFrac: expTaylorFrac,
+    expTaylorTerms: expTaylorTerms
   };
   
   if (nodep)module.exports = R;
