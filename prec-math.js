@@ -1,4 +1,4 @@
-/***** Perfectly Precise Math Library 4.3.2 *****/
+/***** Perfectly Precise Math Library 4.3.3 *****/
 
 /* require tools 4.1.5 */
 
@@ -1645,7 +1645,7 @@
   function atan(a, p){
     if (p == udf)p = prec;
     if (p == -inf)return "0";
-    if (lt(a, "0.4"))return atanTaylor(a, p);
+    if (lt(abs(a), "0.4"))return atanTaylor(a, p);
     return atanTaylorTrans(a, p);
   }
   
