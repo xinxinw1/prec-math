@@ -181,6 +181,7 @@
   }
   
   function gtInt(a, b){ // is a > b ?
+    if (a === b)return false;
     if (len(a) !== len(b))return len(a) > len(b);
     for (var i = 0; i < len(a); i++){
       if (a[i] !== b[i])return num(a[i]) > num(b[i]);
@@ -535,6 +536,17 @@
     if (sign == '-')return left(mknum(front), back);
   }
   
+  // return rnd(a, p) === 0
+  function byzero(a, p){
+    if (zerop(a))return true;
+    if (p == -inf)return true;
+    if (udfp(p))p = 0;
+    var pos = len(a.dat)+a.exp+p;
+    if (pos < 0)return true;
+    if (pos > 0)return false;
+    return num(a.dat[pos]) < 5;
+  }
+  
   //// Sign functions ////
   
   function abs(a){
@@ -760,7 +772,7 @@
       pow = mul(pow, ar, p+3);
       fact = mul(fact, mknumint(i));
       frac = div(pow, fact, p+3);
-      if (zero(frac, p+1))break;
+      if (byzero(frac, p+1))break;
       exp = add(exp, frac);
     }
     
@@ -795,6 +807,7 @@
     nsiz: nsiz,
     fig: fig,
     chke: chke,
+    byzero: byzero,
     
     is: is,
     
