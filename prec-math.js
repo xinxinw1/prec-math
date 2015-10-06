@@ -1,4 +1,4 @@
-/***** Perfectly Precise Math Library 4.3.3 *****/
+/***** Perfectly Precise Math Library 4.3.4 *****/
 
 /* require tools 4.1.5 */
 
@@ -2192,6 +2192,8 @@
     cos: cos,
     sinh: sinh,
     cosh: cosh,
+    acotCont: acotCont,
+    acothCont: acothCont,
     atan: atan,
     atan2: atan2,
     
