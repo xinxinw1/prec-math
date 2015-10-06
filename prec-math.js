@@ -884,83 +884,103 @@
     return acothHash.run(an, bn, a, p);
   }
   
-  function mkFracHash(){
+  // var acoth2Resume = mkAcothResume(mknum("2"));
+  function mkAcothResume(a){
+    var an = function (n){
+      if (n == 0)return zero();
+      return mul(mknumint(2*n-1), a);
+    };
+    
+    var bn = function (n){
+      if (n == 1)return one();
+      return mknumint(-(n-1)*(n-1));
+    };
+    
+    return function (p, o){
+      return fracResume(an, bn, p, o);
+    };
+  }
+  
+  // mkFResume(p) -> o = {dat: ..., p: ..., ...}
+  // mkFResume(p, o) -> o = {...}
+  function hasha(mkFResume){
     var h = {};
     
-    function getObj(a){
-      return h[a.dat];
-    }
-    
-    function initA(a){
+    function run(a, p){
       var d = a.dat;
-      if (udfp(h[d]))h[d] = {"0": udf, nextEmpty500: 500, prevFilled: 0};
-    }
-    
-    function isa500(p){
-      return p % 500 == 0;
-    }
-    
-    function next500(p){
-      return 500*Math.ceil(p/500);
-    }
-    
-    function fillTo(a, p, f){
-      initA(a);
-      var g = getObj(a);
-      for (var i = g.nextEmpty500; i < p; i += 500){
-        g[i] = f(i, g[g.prevFilled]);
-        g.prevFilled = i;
-        g.nextEmpty500 = i+500;
-      }
-      if (p > g.prevFilled){
-        g[p] = f(p, g[g.prevFilled]);
-        g.prevFilled = p;
-        if (isa500(p))g.nextEmpty500 = p+500;
-      }
-    }
-    
-    function getNext(a, p){
-      var g = getObj(a);
-      if (!udfp(g[p]))return g[p];
-      return g[Math.min(g.prevFilled, next500(p))];
-    }
-    
-    function run(an, bn, a, p){
-      fillTo(a, p, function (i, o){return fracResumeNd(an, bn, i, o);});
-      return fracDat(getNext(a, p), p);
+      if (udfp(h[d]))h[d] = hashp(mkFResume(a));
+      return h[d].run(p);
     }
     
     return {h: h, run: run};
   }
+  
+  function mkFracHash(){
+    var h = {};
+    
+    function run(an, bn, a, p){
+      var d = a.dat;
+      if (udfp(h[d])){
+        h[d] = fracResume(an, bn, p);
+      } else {
+        if (p <= h[d].p)return rnd(h[d].dat, p);
+        h[d] = fracResume(an, bn, p, h[d]);
+      }
+      return h[d].dat;
+    }
+    
+    return {h: h, run: run};
+  }
+  
+  
 
   //// Mathematical constants ////
 
-  var esave = {p0: zero(), q0: one(), p1: one(), q1: one(), an: 6};
+  var eHash = hashp(eResume);
+  var e = eHash.run;
+  
+  // hashp = hash over precisions
+  // fResume(p, o);
+  function hashp(fResume){
+    var h = [];
+    
+    function run(p){
+      if (udfp(h[0])){
+        h[0] = fResume(p);
+      } else {
+        if (p <= h[0].p)return rnd(h[0].dat, p);
+        h[0] = fResume(p, h[0]);
+      }
+      return h[0].dat;
+    }
+    
+    return {h: h, run: run};
+  }
+  
   // continued fraction
-  function e(p){
+  function eResume(p, o){
+    if (udfp(o))o = {dat: zero(), p: -1, p0: zero(), q0: one(), p1: one(), q1: one(), an: 2};
     if (p == udf)p = prec;
     if (p == -inf)return zero();
 
-    var p0 = esave.p0;
-    var q0 = esave.q0
-    var p1 = esave.p1;
-    var q1 = esave.q1;
-    var pn, qn;
-    for (var an = esave.an; true; an += 4){
+    var p0 = o.p0;
+    var q0 = o.q0
+    var p1 = o.p1;
+    var q1 = o.q1;
+    var pn = p1;
+    var qn = q1;
+    for (var an = o.an+4; true; an += 4){
+      if (2*nsiz(qn)-3 >= p)break;
       pn = add(mul(mknumint(an), p1), p0);
       qn = add(mul(mknumint(an), q1), q0);
-      if (2*nsiz(qn)-2 >= p)break;
       p0 = p1;
       q0 = q1;
       p1 = pn;
       q1 = qn;
     }
-    esave = {p0: p1, q0: q1,
-             p1: pn, q1: qn,
-             an: an+4};
     var exp = add(one(), div(mul(mknum("2"), pn), qn, p+2));
-
-    return rnd(exp, p);
+    exp = rnd(exp, p);
+    return {dat: exp, p: p, p0: p0, q0: q0, p1: p1, q1: q1, an: an-4};
   }
   
   function ln2(p){
@@ -1077,7 +1097,7 @@
     if (udfp(o)){
       var p1 = a(0);
       var bn1 = b(1);
-      o = {n: 0, p: p, p0: one(), q0: zero(), p1: p1, q1: one(), prod: bn1, bn1: bn1};
+      o = {n: 0, p: -1, p0: one(), q0: zero(), p1: p1, q1: one(), prod: bn1, bn1: bn1};
     }
     if (udfp(p))p = prec;
     if (p == -inf)return zero();
@@ -1210,6 +1230,8 @@
     acothHash: acothHash,
     
     e: e,
+    eHash: eHash,
+    eResume: eResume,
     ln2: ln2, 
     ln5: ln5,
     ln2and5: ln2and5,
