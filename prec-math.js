@@ -556,6 +556,59 @@
     if (pos > 0)return false;
     return num(a.dat[pos]) < 5;
   }
+  
+  // hash simple (ie. no resume)
+  // f(p) -> <real 35.25352>
+  function hashs(f){
+    //  h = [p, dat]
+    var h = {p: -1, dat: udf};
+    
+    function run(p){
+      if (p == udf)p = prec;
+      if (p == -inf)return zero();
+      if (p <= h.p)return rnd(h.dat, p);
+      h.p = p;
+      h.dat = f(p);
+      return h.dat;
+    }
+    
+    return {h: h, run: run};
+  }
+  
+  // hashp = hash over precisions
+  // hashp(fResume)(p) -> fResume(p).dat
+  // fResume(p, o) -> {dat: <real 3>, p: 50, ...}
+  function hashp(fResume){
+    var h = [];
+    
+    function run(p){
+      if (p == udf)p = prec;
+      if (p == -inf)return zero();
+      if (udfp(h[0])){
+        h[0] = fResume(p);
+      } else {
+        if (p <= h[0].p)return rnd(h[0].dat, p);
+        h[0] = fResume(p, h[0]);
+      }
+      return h[0].dat;
+    }
+    
+    return {h: h, run: run};
+  }
+  
+  // hash over a and p
+  // mkFResume(a)(p, o) -> o = {dat: <real 3>, p: 50, ...}
+  function hasha(mkFResume){
+    var h = {};
+    
+    function run(a, p){
+      var d = a.dat;
+      if (udfp(h[d]))h[d] = hashp(mkFResume(a));
+      return h[d].run(p);
+    }
+    
+    return {h: h, run: run};
+  }
 
   //// Sign functions ////
 
@@ -866,25 +919,13 @@
     return rnd(ln, p);
   }
   
-  var acothHash = mkFracHash();
+  var acothHash = hasha(mkAcothResume);
+  var acothCont = acothHash.run;
+  
+  // var acoth2Resume = mkAcothResume(mknum("2"));
   // a must be > 1
   // continued fraction
   // transform of http://functions.wolfram.com/ElementaryFunctions/ArcTanh/10/
-  function acothCont(a, p){
-    var an = function (n){
-      if (n == 0)return zero();
-      return mul(mknumint(2*n-1), a);
-    }
-    
-    var bn = function (n){
-      if (n == 1)return one();
-      return mknumint(-(n-1)*(n-1));
-    }
-    
-    return acothHash.run(an, bn, a, p);
-  }
-  
-  // var acoth2Resume = mkAcothResume(mknum("2"));
   function mkAcothResume(a){
     var an = function (n){
       if (n == 0)return zero();
@@ -901,61 +942,10 @@
     };
   }
   
-  // mkFResume(p) -> o = {dat: ..., p: ..., ...}
-  // mkFResume(p, o) -> o = {...}
-  function hasha(mkFResume){
-    var h = {};
-    
-    function run(a, p){
-      var d = a.dat;
-      if (udfp(h[d]))h[d] = hashp(mkFResume(a));
-      return h[d].run(p);
-    }
-    
-    return {h: h, run: run};
-  }
-  
-  function mkFracHash(){
-    var h = {};
-    
-    function run(an, bn, a, p){
-      var d = a.dat;
-      if (udfp(h[d])){
-        h[d] = fracResume(an, bn, p);
-      } else {
-        if (p <= h[d].p)return rnd(h[d].dat, p);
-        h[d] = fracResume(an, bn, p, h[d]);
-      }
-      return h[d].dat;
-    }
-    
-    return {h: h, run: run};
-  }
-  
-  
-
   //// Mathematical constants ////
 
   var eHash = hashp(eResume);
   var e = eHash.run;
-  
-  // hashp = hash over precisions
-  // fResume(p, o);
-  function hashp(fResume){
-    var h = [];
-    
-    function run(p){
-      if (udfp(h[0])){
-        h[0] = fResume(p);
-      } else {
-        if (p <= h[0].p)return rnd(h[0].dat, p);
-        h[0] = fResume(p, h[0]);
-      }
-      return h[0].dat;
-    }
-    
-    return {h: h, run: run};
-  }
   
   // continued fraction
   function eResume(p, o){
@@ -983,30 +973,23 @@
     return {dat: exp, p: p, p0: p0, q0: q0, p1: p1, q1: q1, an: an-4};
   }
   
-  function ln2(p){
-    if (p == udf)p = prec;
-    if (p == -inf)return zero();
-    //if (p <= 25)return ln2Cont(p);
-    return ln2Machin(p);
-  }
+  var ln2Hash = hashs(ln2Machin);
+  var ln2 = ln2Hash.run;
   
   // Machin-like formula
+  // ln(2) = 144*acoth(251)+54*acoth(449)-38*acoth(4801)+62*acoth(8749)
   // ln(2) = 18*acoth(26)-2*acoth(4801)+8*acoth(8749)
   function ln2Machin(p){
-    var p1 = mul(mknum("18"), acothCont(mknum("26"), p+4));
-    var p2 = mul(mknum("2"), acothCont(mknum("4801"), p+3));
-    var p3 = mul(mknum("8"), acothCont(mknum("8749"), p+3));
-    
-    var sum = add(sub(p1, p2), p3);
-    
+    var p1 = mul(mknum("144"), acothCont(mknum("251"), p+5));
+    var p2 = mul(mknum("54"), acothCont(mknum("449"), p+5));
+    var p3 = mul(mknum("38"), acothCont(mknum("4801"), p+4));
+    var p4 = mul(mknum("62"), acothCont(mknum("8749"), p+5));
+    var sum = add(sub(add(p1, p2), p3), p4);
     return rnd(sum, p);
   }
   
-  function ln5(p){
-    if (p == udf)p = prec;
-    if (p == -inf)return zero();
-    return ln5Machin(p);
-  }
+  var ln5Hash = hashs(ln5Machin);
+  var ln5 = ln5Hash.run;
   
   // Machin-like formula
   // ln(5) = 334*acoth(251)+126*acoth(449)-88*acoth(4801)+144*acoth(8749)
@@ -1015,45 +998,16 @@
     var p2 = mul(mknum("126"), acothCont(mknum("449"), p+5));
     var p3 = mul(mknum("88"), acothCont(mknum("4801"), p+4));
     var p4 = mul(mknum("144"), acothCont(mknum("8749"), p+5));
-    
     var sum = add(sub(add(p1, p2), p3), p4);
-    
     return rnd(sum, p);
   }
   
-  // ln(2) = 144*acoth(251)+54*acoth(449)-38*acoth(4801)+62*acoth(8749)
   function ln2and5(p){
-    var a1 = acothCont(mknum("251"), p+5);
-    var a2 = acothCont(mknum("449"), p+5);
-    var a3 = acothCont(mknum("4801"), p+4);
-    var a4 = acothCont(mknum("8749"), p+5);
-    
-    var p1, p2, p3, p4;
-    
-    p1 = mul(mknum("144"), a1);
-    p2 = mul(mknum("54"), a2);
-    p3 = mul(mknum("38"), a3);
-    p4 = mul(mknum("62"), a4);
-    
-    var ln2 = add(sub(add(p1, p2), p3), p4);
-    ln2 = rnd(ln2, p);
-    
-    p1 = mul(mknum("334"), a1);
-    p2 = mul(mknum("126"), a2);
-    p3 = mul(mknum("88"), a3);
-    p4 = mul(mknum("144"), a4);
-    
-    var ln5 = add(sub(add(p1, p2), p3), p4);
-    ln5 = rnd(ln5, p);
-    
-    return [ln2, ln5];
+    return [ln2(p), ln5(p)];
   }
   
-  function ln10(p){
-    if (p == udf)p = prec;
-    if (p == -inf)return zero();
-    return ln10Machin(p);
-  }
+  var ln10Hash = hashs(ln10Machin);
+  var ln10 = ln10Hash.run;
   
   // Machin-like formula
   // ln(10) = 478*acoth(251)+180*acoth(449)-126*acoth(4801)+206*acoth(8749)
@@ -1062,9 +1016,7 @@
     var p2 = mul(mknum("180"), acothCont(mknum("449"), p+5));
     var p3 = mul(mknum("126"), acothCont(mknum("4801"), p+5));
     var p4 = mul(mknum("206"), acothCont(mknum("8749"), p+5));
-    
     var sum = add(sub(add(p1, p2), p3), p4);
-    
     return rnd(sum, p);
   }
   
@@ -1232,10 +1184,13 @@
     e: e,
     eHash: eHash,
     eResume: eResume,
-    ln2: ln2, 
+    ln2: ln2,
+    ln2Hash: ln2Hash,
     ln5: ln5,
+    ln5Hash: ln5Hash,
     ln2and5: ln2and5,
     ln10: ln10,
+    ln10Hash: ln10Hash,
     
     
     frac: frac,
