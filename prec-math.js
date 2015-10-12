@@ -65,6 +65,10 @@
     if (negp(a))return negStr(b);
     return b;
   }
+  
+  function tonum(a){
+    return num(tostr(a));
+  }
 
   // real("35.35") -> N(false, "3535", -2)
   // real(35.35) -> N(false, "3535", -2)
@@ -84,14 +88,14 @@
     if (realp(a)){
       a = chktrim(a);
       if (!intp(a))return false;
-      return num(tostr(a));
+      return tonum(a);
     }
     if (nump(a))return realint(str(a));
     if (strp(a)){
       if (!vldpStr(a))return false;
       a = mknum(a);
       if (!intp(a))return false;
-      return num(tostr(a));
+      return tonum(a);
     }
     return false;
   }
@@ -387,6 +391,10 @@
 
   function zerop(a){
     return a.dat === "";
+  }
+  
+  function onep(a){
+    return is(a, one());
   }
 
   function negp(a){
@@ -789,18 +797,18 @@
     var fl = trn(a);
     var d = dec(a);
     if (gt(d, mknum("0.5"))){
-      d = sub(d, "1");
-      fl = add(fl, "1");
+      d = sub(d, one());
+      fl = add(fl, one());
     }
 
-    if (zerop(fl))return expDec(a, p);
+    if (zerop(fl))return expDec(d, p);
     var expfl = expInt(fl, p+2);
-    return mul(expfl, expDec(a, p+2+siz(expfl)), p);
+    return mul(expfl, expDec(d, p+2+siz(expfl)), p);
   }
 
   // a is a real obj
   function expInt(a, p){
-    var an = num(tostr(a));
+    var an = tonum(a);
     if (an == 1)return e(p);
     return powDec(e(p+2+(an-1)*(siz(a)+1)), an, p);
   }
@@ -917,6 +925,62 @@
     }
    
     return rnd(ln, p);
+  }
+  
+  function pow(a, b, p){
+    if (zerop(a) || onep(a) || onep(b))return rnd(a, p);
+    if (zerop(b))return rnd(one(), p);
+    if (is(b, neg(one())))return div(one(), a, p);
+    if (p == -inf)return zero();
+    
+    if (negp(b)){
+      b = neg(b);
+      var n = p+2+Math.ceil(-2*tonum(b)*nsiz(a));
+      return div(one(), powPos(a, b, n), p);
+    }
+    return powPos(a, b, p);
+  }
+  
+  function powPos(a, b, p){
+    if (intp(b)){
+      if (is(b, mknum("2")))return mul(a, a, p);
+      if (intp(a) || p == udf)return powExact(a, tonum(b), p);
+      return powDec(a, tonum(b), p);
+    }
+    if (p == udf)p = prec;
+    var n = Math.max(p+3+Math.ceil(tonum(b)*siz(a)), 0);
+    return exp(mul(b, ln(a, n+3+siz(b)), n), p);
+  }
+  
+  // http://en.wikipedia.org/wiki/Exponentiation_by_squaring
+  // @param String a
+  // @param num n
+  function powExact(a, n, p){
+    var prod = one();
+    while (n > 0){
+      if (n % 2 == 1){
+        prod = mul(prod, a);
+        n--;
+      }
+      a = mul(a, a);
+      n = n/2;
+    }
+    return udfp(p)?prod:rnd(prod, p);
+  }
+  
+  // @param String a
+  // @param num n
+  function powDec(a, n, p){
+    var pow = powDec2(a, n, p);
+    if (negp(a) && n % 2 == 1)return neg(pow);
+    return pow;
+  }
+  
+  function powDec2(a, n, p){
+    if (n == 0)return one();
+    if (n % 2 == 1)return mul(a, powDec2(a, n-1, p+2+siz(a)), p);
+    var a2 = powDec2(a, n/2, p+2+Math.ceil(n/2*siz(a)));
+    return mul(a2, a2, p);
   }
   
   var acothHash = hasha(mkAcothResume);
@@ -1136,6 +1200,15 @@
     mulInt: mulInt,
     divInt: divInt,
 
+    zerop: zerop,
+    onep: onep,
+    negp: negp,
+    intp: intp,
+    decp: decp,
+    evnp: evnp,
+    oddp: oddp,
+    div5p: div5p,
+    
     trimr: trimr,
     triml: triml,
     cntr: cntr,
@@ -1170,6 +1243,7 @@
 
     exp: exp,
     expPos: expPos,
+    expInt: expInt,
     expDec: expDec,
     expTaylorFrac: expTaylorFrac,
     expTaylorTerms: expTaylorTerms,
@@ -1177,6 +1251,10 @@
     ln: ln,
     lnReduce: lnReduce,
     lnTaylor: lnTaylor,
+    
+    pow: pow,
+    powExact: powExact,
+    powDec: powDec,
     
     acothCont: acothCont,
     acothHash: acothHash,
@@ -1191,7 +1269,6 @@
     ln2and5: ln2and5,
     ln10: ln10,
     ln10Hash: ln10Hash,
-    
     
     frac: frac,
     fracResume: fracResume,
