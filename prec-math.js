@@ -1099,112 +1099,6 @@
     return sqrtShift(a, p);
   }
   
-  function cosTaylorTerms(a, p){
-    var isint = intp(a);
-    var frac1 = one();
-    var frac2 = one();
-    var frac;
-    var cos = one();
-    var sign = true;
-    if (isint)var a2 = mul(a, a);
-    for (var i = 2; true; i += 2, sign = !sign){
-      if (isint)frac1 = mul(frac1, a2);
-      else frac1 = powDec(a, i, p+2);
-      frac2 = mul(frac2, mknumint(i*(i-1)));
-      frac = div(frac1, frac2, p+2);
-      if (byzero(frac, p+1))break;
-      if (sign)cos = sub(cos, frac);
-      else cos = add(cos, frac);
-    }
-    
-    return rnd(cos, p);
-  }
-  
-  function cosTaylorFrac(a, p){
-    var frac1 = one();
-    var frac2 = one();
-    var pow = one();
-    var sign = true;
-    var a2 = mul(a, a, p+5);
-    var prod;
-    for (var i = 2; true; i += 2, sign = !sign){
-      prod = mknumint(i*(i-1));
-      frac1 = mul(frac1, prod);
-      pow = mul(pow, a2, p+5);
-      if (sign)frac1 = sub(frac1, pow);
-      else frac1 = add(frac1, pow);
-      frac2 = mul(frac2, prod);
-      if (nsiz(frac2)-siz(pow)-2 >= p)break;
-    }
-    
-    return div(frac1, frac2, p);
-  }
-  
-  // Taylor series with big fraction
-  function sinTaylorFrac(a, p){
-    var frac1 = a;
-    var frac2 = one();
-    var pow = a;
-    var sign = true;
-    var a2 = mul(a, a, p+5);
-    var prod;
-    for (var i = 3; true; i += 2, sign = !sign){
-      prod = mknumint(i*(i-1));
-      frac1 = mul(frac1, prod);
-      pow = mul(pow, a2, p+5);
-      if (sign)frac1 = sub(frac1, pow);
-      else frac1 = add(frac1, pow);
-      frac2 = mul(frac2, prod);
-      if (nsiz(frac2)-siz(pow)-2 >= p)break;
-    }
-    
-    return div(frac1, frac2, p);
-  }
-  
-  function sinTaylorTerms(a, p){
-    var isint = intp(a);
-    var frac1 = a;
-    var frac2 = one();
-    var frac;
-    var sin = a;
-    var sign = true;
-    if (isint)var a2 = mul(a, a);
-    for (var i = 3; true; i += 2, sign = !sign){
-      if (isint)frac1 = mul(frac1, a2);
-      else frac1 = powDec(a, i, p+2);
-      frac2 = mul(frac2, mknumint(i*(i-1)));
-      frac = div(frac1, frac2, p+2);
-      if (byzero(frac, p+1))break;
-      if (sign)sin = sub(sin, frac);
-      else sin = add(sin, frac);
-    }
-    
-    return rnd(sin, p);
-  }
-  
-  
-  
-  /*function cos(a, p){
-    if (p == udf)p = prec;
-    if (p == -inf)return zero();
-    
-    a = abs(a);
-    var pii = pi(p+3+siz(a));
-    var tpi = mul(two(), pii);
-    a = abs(sub(a, mul(div(a, tpi, 0), tpi)));
-    
-    var hpi = mul(pii, mknum("0.5"));
-    var numhpi = tonum(div(a, hpi, 0));
-    switch (numhpi){
-      case 0: return cosTaylorTerms(a, p);
-      case 1: return neg(sinTaylorTerms(sub(a, hpi), p));
-      case 2: return neg(cosTaylorTerms(sub(a, pii), p));
-      case 3: err(cos, "Something happened");
-    }
-    
-    err(cos, "Something else happened, a = $1 | numhpi = $2", a, numhpi);
-  }*/
-  
   function cos(a, p){
     if (p == udf)p = prec;
     if (p == -inf)return zero();
@@ -1238,6 +1132,39 @@
       return neg(cosTrans(a, p, 20));
     }
     return cosTrans(a, p, 20);
+  }
+  
+  function cosTrans(a, p, i){
+    var arr = cosTrans2(a, p, i);
+    return arr[arr.length-1];
+  }
+  
+  function cosTrans2(a, p, i){
+    if (udfp(i))i = 5;
+    if (i == 0)return [cosTaylorFrac(a, p)];
+    var c = cosTrans2(mul(a, mknum("0.5")), p+3, i-1);
+    c.push(sub(mul(two(), pow(c[c.length-1], two(), p+1)), one(), p));
+    return c;
+  }
+  
+  function cosTaylorFrac(a, p){
+    var frac1 = one();
+    var frac2 = one();
+    var pow = one();
+    var sign = true;
+    var a2 = mul(a, a, p+5);
+    var prod;
+    for (var i = 2; true; i += 2, sign = !sign){
+      prod = mknumint(i*(i-1));
+      frac1 = mul(frac1, prod);
+      pow = mul(pow, a2, p+5);
+      if (sign)frac1 = sub(frac1, pow);
+      else frac1 = add(frac1, pow);
+      frac2 = mul(frac2, prod);
+      if (nsiz(frac2)-siz(pow)-2 >= p)break;
+    }
+    
+    return div(frac1, frac2, p);
   }
   
   function sin(a, p){
@@ -1284,21 +1211,6 @@
     return sgn?neg(s):s;
   }
   
-  function cosTrans(a, p, i){
-    if (udfp(i))i = 5;
-    if (i == 0)return cosTaylorFrac(a, p);
-    var c = cosTrans(mul(a, mknum("0.5")), p+4, i-1);
-    return sub(mul(two(), pow(c, two(), p+1)), one(), p);
-  }
-  
-  function cosTrans2(a, p, i){
-    if (udfp(i))i = 5;
-    if (i == 0)return [cosTaylorFrac(a, p)];
-    var c = cosTrans2(mul(a, mknum("0.5")), p+3, i-1);
-    c.push(sub(mul(two(), pow(c[c.length-1], two(), p+1)), one(), p));
-    return c;
-  }
-  
   function sinTrans(a, p, i){
     if (udfp(i))i = 5;
     var arr = cosTrans2(mul(a, mknum("0.5")), p+3, i-1);
@@ -1307,6 +1219,27 @@
       s = mul(two(), mul(s, arr[k], p+3*(i-k-1)+1), p+3*(i-k-1));
     }
     return s;
+  }
+  
+  // Taylor series with big fraction
+  function sinTaylorFrac(a, p){
+    var frac1 = a;
+    var frac2 = one();
+    var pow = a;
+    var sign = true;
+    var a2 = mul(a, a, p+5);
+    var prod;
+    for (var i = 3; true; i += 2, sign = !sign){
+      prod = mknumint(i*(i-1));
+      frac1 = mul(frac1, prod);
+      pow = mul(pow, a2, p+5);
+      if (sign)frac1 = sub(frac1, pow);
+      else frac1 = add(frac1, pow);
+      frac2 = mul(frac2, prod);
+      if (nsiz(frac2)-siz(pow)-2 >= p)break;
+    }
+    
+    return div(frac1, frac2, p);
   }
   
   var acothHash = hasha(mkAcothResume);
@@ -1646,15 +1579,14 @@
     sqrtShift: sqrtShift,
     sqrt: sqrt,
     
-    cosTaylorTerms: cosTaylorTerms,
-    cosTaylorFrac: cosTaylorFrac,
-    sinTaylorFrac: sinTaylorFrac,
-    sinTaylorTerms: sinTaylorTerms,
     cos: cos,
-    cosTrans: cosTrans,
     cosShift: cosShift,
+    cosTrans: cosTrans,
+    cosTaylorFrac: cosTaylorFrac,
     sin: sin,
+    sinShift: sinShift,
     sinTrans: sinTrans,
+    sinTaylorFrac: sinTaylorFrac,
     
     acothCont: acothCont,
     acothHash: acothHash,
