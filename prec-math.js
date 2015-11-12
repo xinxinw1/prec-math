@@ -28,6 +28,7 @@
   var tagp = $.T.tagp;
   
   var out = $.out;
+  var al = $.al;
 
   var err = $.err;
 
@@ -68,6 +69,11 @@
   
   function tonum(a){
     return num(tostr(a));
+  }
+  
+  function mkstr(a){
+    if (a === 0)return "";
+    return str(a);
   }
 
   // real("35.35") -> N(false, "3535", -2)
@@ -113,6 +119,10 @@
 
   function one(){
     return N(false, "1", 0);
+  }
+  
+  function two(){
+    return N(false, "2", 0);
   }
 
   function realp(a){
@@ -353,7 +363,7 @@
   }
 
   // long division of positive (non-zero) integers a and b
-  function divInt(a, b, p){
+  function divIntTrn(a, b, p){
     if (udfp(p))p = prec;
     if (p == -inf)return zero();
     var quot = "";
@@ -362,7 +372,7 @@
     var k, i;
     var arr = ["", b, addInt(b, b)];
     var alen = a.length;
-    for (i = 0; i < alen+p+1; i++){
+    for (i = 0; i < alen+p; i++){
       if (i < alen){
         if (curr !== "" || a[i] !== '0')curr += a[i];
       } else {
@@ -381,10 +391,13 @@
       }
     }
     if (quot === "")return zero();
-    if (p < 0){
-      for (var j = -p-1; j >= 1; j--)quot += "0";
-    }
-    return rnd(chktrimr(N(false, quot, exp)), p);
+    for (var j = -p; j >= 1; j--)quot += "0";
+    return chktrimr(N(false, quot, exp));
+  }
+  
+  function divInt(a, b, p){
+    if (udfp(p))p = prec;
+    return rnd(divIntTrn(a, b, p+1), p);
   }
 
   //// Predicates ////
@@ -534,6 +547,10 @@
   // number of sig figs in a
   function fig(a){
     return len(a.dat);
+  }
+  
+  function declen(a){
+    return Math.max(0, -a.exp);
   }
 
   // input a = num(a);
@@ -710,8 +727,8 @@
     var prod = chktrimr(N(sign, mulInt(a.dat, b.dat), a.exp+b.exp));
     return udfp(p)?prod:rnd(prod, p);
   }
-
-  function div(a, b, p){
+  
+  function divTrn(a, b, p){
     if (zerop(b))err(div, "b cannot be 0");
     if (zerop(a))return a;
     if (udfp(p))p = prec;
@@ -721,7 +738,12 @@
     if (negp(a))a = neg(a);
     if (negp(b))b = neg(b);
     // x-(a.exp-b.exp) = p --> x = p+a.exp-b.exp
-    return wneg(right(divInt(a.dat, b.dat, p+a.exp-b.exp), a.exp-b.exp), sign);
+    return wneg(right(divIntTrn(a.dat, b.dat, p+a.exp-b.exp), a.exp-b.exp), sign);
+  }
+
+  function div(a, b, p){
+    if (udfp(p))p = prec;
+    return rnd(divTrn(a, b, p+1), p);
   }
   
   // beware of infinite loops!
@@ -781,80 +803,6 @@
 
   //// Extended operation functions ////
 
-  function exp(a, p){
-    if (zerop(a))return rnd(one(), p);
-    if (p == udf)p = prec;
-    if (p == -inf)return zero();
-
-    if (negp(a))return div(one(), expPos(neg(a), p+2), p);
-    return expPos(a, p);
-  }
-
-  // exp positive
-  function expPos(a, p){
-    if (intp(a))return expInt(a, p);
-
-    var fl = trn(a);
-    var d = dec(a);
-    if (gt(d, mknum("0.5"))){
-      d = sub(d, one());
-      fl = add(fl, one());
-    }
-
-    if (zerop(fl))return expDec(d, p);
-    var expfl = expInt(fl, p+2);
-    return mul(expfl, expDec(d, p+2+siz(expfl)), p);
-  }
-
-  // a is a real obj
-  function expInt(a, p){
-    var an = tonum(a);
-    if (an == 1)return e(p);
-    return powDec(e(p+2+(an-1)*(siz(a)+1)), an, p);
-  }
-
-  function expDec(a, p){
-    var d = dec(a);
-    var dl = fig(d); // dec length
-    if (dl <= 30)return expTaylorFrac(a, p);
-    return expTaylorTerms(a, p);
-  }
-
-  // Taylor Series with big fraction
-  function expTaylorFrac(a, p){
-    if (decp(a))a = rnd(a, p+2);
-    var frac1 = add(a, one());
-    var frac2 = one();
-    var pow = a;
-    for (var i = 2; true; i++){
-      frac1 = mul(frac1, mknumint(i));
-      pow = mul(pow, a);
-      frac1 = add(frac1, pow);
-      frac2 = mul(frac2, mknumint(i));
-      if (nsiz(frac2)-siz(pow)-2 >= p)break;
-    }
-
-    return div(frac1, frac2, p);
-  }
-
-  // Taylor Series adding term by term
-  function expTaylorTerms(a, p){
-    var ar = rnd(a, p+3);
-    var pow = ar;
-    var fact = one();
-    var frac = one();
-    var exp = add(ar, one());
-    for (var i = 2; true; i++){
-      pow = mul(pow, ar, p+3);
-      fact = mul(fact, mknumint(i));
-      frac = div(pow, fact, p+3);
-      if (byzero(frac, p+1))break;
-      exp = add(exp, frac);
-    }
-
-    return rnd(exp, p);
-  }
-  
   function ln(a, p){
     if (p == udf)p = prec;
     if (p == -inf)return zero();
@@ -927,6 +875,89 @@
     return rnd(ln, p);
   }
   
+  // @param String a
+  // @param num n
+  function powDec(a, n, p){
+    if (n == 0)return one();
+    if (n % 2 == 1)return mul(a, powDec(a, n-1, p+2+siz(a)), p);
+    var a2 = powDec(a, n/2, p+2+Math.ceil(n/2*siz(a)));
+    return mul(a2, a2, p);
+  }
+
+  function exp(a, p){
+    if (zerop(a))return rnd(one(), p);
+    if (p == udf)p = prec;
+    if (p == -inf)return zero();
+
+    if (negp(a))return div(one(), expPos(neg(a), p+2), p);
+    return expPos(a, p);
+  }
+
+  // exp positive
+  function expPos(a, p){
+    if (intp(a))return expInt(a, p);
+
+    var fl = trn(a);
+    var d = dec(a);
+    if (gt(d, mknum("0.5"))){
+      d = sub(d, one());
+      fl = add(fl, one());
+    }
+
+    if (zerop(fl))return expDec(d, p);
+    var expfl = expInt(fl, p+2);
+    return mul(expfl, expDec(d, p+2+siz(expfl)), p);
+  }
+  
+  // a is a real obj
+  function expInt(a, p){
+    var an = tonum(a);
+    if (an == 1)return e(p);
+    return powDec(e(p+2+(an-1)*(siz(a)+1)), an, p);
+  }
+  
+  function expDec(a, p){
+    var d = dec(a);
+    var dl = fig(d); // dec length
+    if (dl <= 30)return expTaylorFrac(a, p);
+    return expTaylorTerms(a, p);
+  }
+
+  // Taylor Series with big fraction
+  function expTaylorFrac(a, p){
+    if (decp(a))a = rnd(a, p+2);
+    var frac1 = add(a, one());
+    var frac2 = one();
+    var pow = a;
+    for (var i = 2; true; i++){
+      frac1 = mul(frac1, mknumint(i));
+      pow = mul(pow, a);
+      frac1 = add(frac1, pow);
+      frac2 = mul(frac2, mknumint(i));
+      if (nsiz(frac2)-siz(pow)-2 >= p)break;
+    }
+
+    return div(frac1, frac2, p);
+  }
+
+  // Taylor Series adding term by term
+  function expTaylorTerms(a, p){
+    var ar = rnd(a, p+3);
+    var pow = ar;
+    var fact = one();
+    var frac = one();
+    var exp = add(ar, one());
+    for (var i = 2; true; i++){
+      pow = mul(pow, ar, p+3);
+      fact = mul(fact, mknumint(i));
+      frac = div(pow, fact, p+3);
+      if (byzero(frac, p+1))break;
+      exp = add(exp, frac);
+    }
+
+    return rnd(exp, p);
+  }
+
   function pow(a, b, p){
     if (zerop(a) || onep(a) || onep(b))return rnd(a, p);
     if (zerop(b))return rnd(one(), p);
@@ -941,19 +972,8 @@
     return powPos(a, b, p);
   }
   
-  function powPos(a, b, p){
-    if (intp(b)){
-      if (is(b, mknum("2")))return mul(a, a, p);
-      if (intp(a) || p == udf)return powExact(a, tonum(b), p);
-      return powDec(a, tonum(b), p);
-    }
-    if (p == udf)p = prec;
-    var n = Math.max(p+3+Math.ceil(tonum(b)*siz(a)), 0);
-    return exp(mul(b, ln(a, n+3+siz(b)), n), p);
-  }
-  
   // http://en.wikipedia.org/wiki/Exponentiation_by_squaring
-  // @param String a
+  // @param real a
   // @param num n
   function powExact(a, n, p){
     var prod = one();
@@ -968,25 +988,331 @@
     return udfp(p)?prod:rnd(prod, p);
   }
   
-  // @param String a
-  // @param num n
-  function powDec(a, n, p){
-    var pow = powDec2(a, n, p);
-    if (negp(a) && n % 2 == 1)return neg(pow);
-    return pow;
+  function powPos(a, b, p){
+    if (intp(b)){
+      if (is(b, two()))return mul(a, a, p);
+      if (intp(a) || p == udf)return powExact(a, tonum(b), p);
+      return powDec(a, tonum(b), p);
+    }
+    if (p == udf)p = prec;
+    var n = Math.max(p+3+Math.ceil(tonum(b)*siz(a)), 0);
+    return exp(mul(b, ln(a, n+3+siz(b)), n), p);
   }
   
-  function powDec2(a, n, p){
-    if (n == 0)return one();
-    if (n % 2 == 1)return mul(a, powDec2(a, n-1, p+2+siz(a)), p);
-    var a2 = powDec2(a, n/2, p+2+Math.ceil(n/2*siz(a)));
-    return mul(a2, a2, p);
+  // sqrt approximation that doesn't go bust when a.length >= 308
+  // unlike chke(Math.sqrt(num(a)));
+  /*
+  n is odd:
+  a = m*10^n
+  sqrt(a) = sqrt(m*10^n)
+          = sqrt(m)*sqrt(10^n)
+          = sqrt(m)*10^(n/2)
+          = sqrt(m)*10^((n-1+1)/2)
+          = sqrt(m)*10^((n-1)/2+1/2)
+          = sqrt(m)*10^((n-1)/2)*10^(1/2)
+          = sqrt(10*m)*10^((n-1)/2)
+  n is even:
+  a = m*10^n
+  sqrt(a) = sqrt(m*10^n)
+          = sqrt(m)*sqrt(10^n)
+          = sqrt(m)*10^(n/2)
+  */
+  function sqrtAppr(a){
+    var n = siz(a)-2;
+    var m = tonum(left(a, n));
+    
+    if (n % 2 != 0){
+      m = Math.sqrt(10 * m);
+      n = (n-1) / 2;
+    } else {
+      m = Math.sqrt(m);
+      n = n / 2;
+    }
+    
+    return right(mknum(mkstr(m)), n);
+  }
+  
+  // a = an integer real
+  // return trn(sqrt(a))
+  function isqrt(a){
+    var sqrt = sqrtAppr(a);
+    if (zerop(sqrt))return zero();
+    var func1;
+    while (true){
+      func1 = sub(mul(sqrt, sqrt, 2), a);
+      func1 = div(func1, mul(two(), sqrt), 2);
+      if (byzero(func1, 1))break;
+      sqrt = sub(sqrt, func1);
+    }
+    
+    return trn(sqrt);
+  }
+  
+  // continued fraction
+  // http://en.wikipedia.org/wiki/Generalized_continued_fraction
+  function sqrtCont(a, p){
+    var rt = isqrt(a);
+    var diff = sub(a, mul(rt, rt));
+    if (zerop(diff))return rt;
+    var rt2 = mul(two(), rt);
+    
+    var an = function (n){
+      if (n == 0)return rt;
+      return rt2;
+    }
+    
+    var bn = function (n){
+      return diff;
+    }
+    
+    return frac(an, bn, p);
+  }
+  
+  /*
+  a = m*10^n
+  n is odd:
+  sqrt(a, p) = sqrt(m*10^n)
+             = sqrt(m)*sqrt(10^n)
+             = sqrt(m)*10^(n/2)
+             = sqrt(m)*10^((n-1+1)/2)
+             = sqrt(m)*10^((n-1)/2+1/2)
+             = sqrt(m)*10^((n-1)/2)*10^(1/2)
+             = sqrt(10*m)*10^((n-1)/2)
+  n is even:
+  sqrt(a) = sqrt(m*10^n)
+          = sqrt(m)*sqrt(10^n)
+          = sqrt(m)*10^(n/2)
+  */
+  // uses identity sqrt(a) = sqrt(100*a)/10 to remove decimals
+  // and then uses continued fraction
+  function sqrtShift(a, p){
+    var n = a.exp;
+    if (n % 2 != 0)n -= 1;
+    var m = left(a, n);
+    return right(sqrtCont(m, p+n/2), n/2);
+  }
+  
+  function sqrt(a, p){
+    if (negp(a))err(sqrt, "a cannot be negative");
+    if (p == udf)p = prec;
+    if (p == -inf)return zero();
+    return sqrtShift(a, p);
+  }
+  
+  function cosTaylorTerms(a, p){
+    var isint = intp(a);
+    var frac1 = one();
+    var frac2 = one();
+    var frac;
+    var cos = one();
+    var sign = true;
+    if (isint)var a2 = mul(a, a);
+    for (var i = 2; true; i += 2, sign = !sign){
+      if (isint)frac1 = mul(frac1, a2);
+      else frac1 = powDec(a, i, p+2);
+      frac2 = mul(frac2, mknumint(i*(i-1)));
+      frac = div(frac1, frac2, p+2);
+      if (byzero(frac, p+1))break;
+      if (sign)cos = sub(cos, frac);
+      else cos = add(cos, frac);
+    }
+    
+    return rnd(cos, p);
+  }
+  
+  function cosTaylorFrac(a, p){
+    var frac1 = one();
+    var frac2 = one();
+    var pow = one();
+    var sign = true;
+    var a2 = mul(a, a, p+5);
+    var prod;
+    for (var i = 2; true; i += 2, sign = !sign){
+      prod = mknumint(i*(i-1));
+      frac1 = mul(frac1, prod);
+      pow = mul(pow, a2, p+5);
+      if (sign)frac1 = sub(frac1, pow);
+      else frac1 = add(frac1, pow);
+      frac2 = mul(frac2, prod);
+      if (nsiz(frac2)-siz(pow)-2 >= p)break;
+    }
+    
+    return div(frac1, frac2, p);
+  }
+  
+  // Taylor series with big fraction
+  function sinTaylorFrac(a, p){
+    var frac1 = a;
+    var frac2 = one();
+    var pow = a;
+    var sign = true;
+    var a2 = mul(a, a, p+5);
+    var prod;
+    for (var i = 3; true; i += 2, sign = !sign){
+      prod = mknumint(i*(i-1));
+      frac1 = mul(frac1, prod);
+      pow = mul(pow, a2, p+5);
+      if (sign)frac1 = sub(frac1, pow);
+      else frac1 = add(frac1, pow);
+      frac2 = mul(frac2, prod);
+      if (nsiz(frac2)-siz(pow)-2 >= p)break;
+    }
+    
+    return div(frac1, frac2, p);
+  }
+  
+  function sinTaylorTerms(a, p){
+    var isint = intp(a);
+    var frac1 = a;
+    var frac2 = one();
+    var frac;
+    var sin = a;
+    var sign = true;
+    if (isint)var a2 = mul(a, a);
+    for (var i = 3; true; i += 2, sign = !sign){
+      if (isint)frac1 = mul(frac1, a2);
+      else frac1 = powDec(a, i, p+2);
+      frac2 = mul(frac2, mknumint(i*(i-1)));
+      frac = div(frac1, frac2, p+2);
+      if (byzero(frac, p+1))break;
+      if (sign)sin = sub(sin, frac);
+      else sin = add(sin, frac);
+    }
+    
+    return rnd(sin, p);
+  }
+  
+  
+  
+  /*function cos(a, p){
+    if (p == udf)p = prec;
+    if (p == -inf)return zero();
+    
+    a = abs(a);
+    var pii = pi(p+3+siz(a));
+    var tpi = mul(two(), pii);
+    a = abs(sub(a, mul(div(a, tpi, 0), tpi)));
+    
+    var hpi = mul(pii, mknum("0.5"));
+    var numhpi = tonum(div(a, hpi, 0));
+    switch (numhpi){
+      case 0: return cosTaylorTerms(a, p);
+      case 1: return neg(sinTaylorTerms(sub(a, hpi), p));
+      case 2: return neg(cosTaylorTerms(sub(a, pii), p));
+      case 3: err(cos, "Something happened");
+    }
+    
+    err(cos, "Something else happened, a = $1 | numhpi = $2", a, numhpi);
+  }*/
+  
+  function cos(a, p){
+    if (p == udf)p = prec;
+    if (p == -inf)return zero();
+    
+    a = abs(a);
+    // declen >= 150 -> extra = 20, declen = 0 -> extra = 0
+    if (siz(a) <= 12)return cosTrans(a, p, Math.ceil(siz(a)/0.3)+Math.ceil(Math.min(20, declen(a)*20/150)));
+    return cosShift(a, p);
+  }
+  
+  // cos(a) = cos(-a)
+  // 0 <= a <= inf
+  // cos(a) = cos(a-2*pi)
+  // nearest2pi = rnd(a/(2*pi))*2*pi
+  // a = abs(a-nearest2pi)
+  // 0 <= a <= pi
+  // cos(a) = -cos(pi-a) // for a ~ pi
+  // nearestpi = rnd(a/pi)*pi
+  // a = abs(a-nearestpi)
+  // 0 <= a <= pi/2
+  function cosShift(a, p){
+    var pii = pi(p+3+siz(a));
+    var tpi = mul(two(), pii);
+    var ntpi = div(a, rnd(tpi, 2+siz(a)), 0);
+    if (!zerop(ntpi))a = abs(sub(a, mul(ntpi, tpi)));
+    
+    var npii = div(a, rnd(pii, 3+siz(a)), 0);
+    if (!zerop(npii)){
+      if (gt(npii, one()))err(cos, "What");
+      a = abs(sub(a, pii));
+      return neg(cosTrans(a, p, 20));
+    }
+    return cosTrans(a, p, 20);
+  }
+  
+  function sin(a, p){
+    if (p == udf)p = prec;
+    if (p == -inf)return zero();
+    
+    var sgn = negp(a);
+    a = abs(a);
+    // declen >= 150 -> extra = 20, declen = 0 -> extra = 0
+    var s;
+    if (siz(a) <= 12)s = sinTrans(a, p, Math.ceil(siz(a)/0.3)+Math.ceil(Math.min(20, declen(a)*20/150)));
+    else s = sinShift(a, p);
+    return sgn?neg(s):s;
+  }
+  
+  // sin(a) = -sin(-a)
+  // 0 <= a <= inf
+  // sin(a) = sin(a-2*pi)
+  // nearest2pi = rnd(a/(2*pi))*2*pi
+  // a = abs(a-nearest2pi)
+  // 0 <= a <= pi
+  // cos(a) = -cos(a-pi) // for a ~ pi
+  // nearestpi = rnd(a/pi)*pi
+  // a = abs(a-nearestpi)
+  // 0 <= a <= pi/2
+  function sinShift(a, p){
+    var pii = pi(p+3+siz(a));
+    var tpi = mul(two(), pii);
+    var ntpi = div(a, rnd(tpi, 2+siz(a)), 0);
+    if (!zerop(ntpi))a = sub(a, mul(ntpi, tpi));
+    
+    var sgn = negp(a);
+    a = abs(a);
+    
+    var npii = div(a, rnd(pii, 3+siz(a)), 0);
+    if (!zerop(npii)){
+      if (gt(npii, one()))err(cos, "What");
+      a = sub(a, pii);
+      sgn = sgn != negp(a);
+      a = abs(a);
+      sgn = sgn != true;
+    }
+    var s = sinTrans(a, p, 20);
+    return sgn?neg(s):s;
+  }
+  
+  function cosTrans(a, p, i){
+    if (udfp(i))i = 5;
+    if (i == 0)return cosTaylorFrac(a, p);
+    var c = cosTrans(mul(a, mknum("0.5")), p+4, i-1);
+    return sub(mul(two(), pow(c, two(), p+1)), one(), p);
+  }
+  
+  function cosTrans2(a, p, i){
+    if (udfp(i))i = 5;
+    if (i == 0)return [cosTaylorFrac(a, p)];
+    var c = cosTrans2(mul(a, mknum("0.5")), p+3, i-1);
+    c.push(sub(mul(two(), pow(c[c.length-1], two(), p+1)), one(), p));
+    return c;
+  }
+  
+  function sinTrans(a, p, i){
+    if (udfp(i))i = 5;
+    var arr = cosTrans2(mul(a, mknum("0.5")), p+3, i-1);
+    var s = sinTaylorFrac(mul(a, powExact(mknum("0.5"), i)), p+3*i);
+    for (var k = 0; k < arr.length; k++){
+      s = mul(two(), mul(s, arr[k], p+3*(i-k-1)+1), p+3*(i-k-1));
+    }
+    return s;
   }
   
   var acothHash = hasha(mkAcothResume);
   var acothCont = acothHash.run;
   
-  // var acoth2Resume = mkAcothResume(mknum("2"));
+  // var acoth2Resume = mkAcothResume(two());
   // a must be > 1
   // continued fraction
   // transform of http://functions.wolfram.com/ElementaryFunctions/ArcTanh/10/
@@ -1000,6 +1326,27 @@
       if (n == 1)return one();
       return mknumint(-(n-1)*(n-1));
     };
+    
+    return function (p, o){
+      return fracResume(an, bn, p, o);
+    };
+  }
+  
+  var acotHash = hasha(mkAcotResume);
+  var acotCont = acotHash.run;
+  
+  // continued fraction
+  // transform of http://en.wikipedia.org/wiki/Inverse_trigonometric_functions#Continued_fractions_for_arctangent
+  function mkAcotResume(a){
+    var an = function (n){
+      if (n == 0)return zero();
+      return mul(mknumint(2*n-1), a);
+    }
+    
+    var bn = function (n){
+      if (n == 1)return one();
+      return mknumint((n-1)*(n-1));
+    }
     
     return function (p, o){
       return fracResume(an, bn, p, o);
@@ -1032,7 +1379,7 @@
       p1 = pn;
       q1 = qn;
     }
-    var exp = add(one(), div(mul(mknum("2"), pn), qn, p+2));
+    var exp = add(one(), div(mul(two(), pn), qn, p+2));
     exp = rnd(exp, p);
     return {dat: exp, p: p, p0: p0, q0: q0, p1: p1, q1: q1, an: an-4};
   }
@@ -1082,6 +1429,22 @@
     var p4 = mul(mknum("206"), acothCont(mknum("8749"), p+5));
     var sum = add(sub(add(p1, p2), p3), p4);
     return rnd(sum, p);
+  }
+  
+  var piHash = hashs(piMachin);
+  var pi = piHash.run;
+  
+  // Machin-like formula 44*acot(57)+7*acot(239)-12*acot(682)+24*acot(12943)
+  // http://en.wikipedia.org/wiki/Machin-like_formula#More_terms
+  function piMachin(p){
+    var p1 = mul(mknum("44"), acotCont(mknum("57"), p+4));
+    var p2 = mul(mknum("7"), acotCont(mknum("239"), p+3));
+    var p3 = mul(mknum("12"), acotCont(mknum("682"), p+4));
+    var p4 = mul(mknum("24"), acotCont(mknum("12943"), p+4));
+    
+    var sum = add(sub(add(p1, p2), p3), p4);
+    
+    return mul(sum, mknum("4"), p);
   }
   
   //// Special operation functions ////
@@ -1177,6 +1540,21 @@
     }
     return {n: n-1, p0: p0, q0: q0, p1: p1, q1: q1};
   }
+  
+  // Euclidean definition
+  // https://en.wikipedia.org/wiki/Modulo_operation
+  function qar(a, b){
+    var q = (negp(b)?cei:flr)(divTrn(a, b, 1));
+    return [q, sub(a, mul(b, q))];
+  }
+  
+  function mod(a, b){
+    return qar(a, b)[1];
+  }
+  
+  function npi(a){
+    return divTrn(a, pi(declen(a)+3+siz(a)), 0);
+  }
 
   ////// R object exposure //////
 
@@ -1191,6 +1569,7 @@
     num: N,
     zero: zero,
     one: one,
+    two: two,
     realp: realp,
 
     gtInt: gtInt,
@@ -1198,6 +1577,7 @@
     add1Int: add1Int,
     subInt: subInt,
     mulInt: mulInt,
+    divIntTrn: divIntTrn,
     divInt: divInt,
 
     zerop: zerop,
@@ -1213,6 +1593,9 @@
     triml: triml,
     cntr: cntr,
     cntl: cntl,
+    right: right,
+    left: left,
+    wneg: wneg,
     matexp: matexp,
     siz: siz,
     nsiz: nsiz,
@@ -1230,6 +1613,7 @@
     add: add,
     sub: sub,
     mul: mul,
+    divTrn: divTrn,
     div: div,
     divInf: divInf,
 
@@ -1256,8 +1640,26 @@
     powExact: powExact,
     powDec: powDec,
     
+    sqrtAppr: sqrtAppr,
+    isqrt: isqrt,
+    sqrtCont: sqrtCont,
+    sqrtShift: sqrtShift,
+    sqrt: sqrt,
+    
+    cosTaylorTerms: cosTaylorTerms,
+    cosTaylorFrac: cosTaylorFrac,
+    sinTaylorFrac: sinTaylorFrac,
+    sinTaylorTerms: sinTaylorTerms,
+    cos: cos,
+    cosTrans: cosTrans,
+    cosShift: cosShift,
+    sin: sin,
+    sinTrans: sinTrans,
+    
     acothCont: acothCont,
     acothHash: acothHash,
+    acotCont: acotCont,
+    acotHash: acotHash,
     
     e: e,
     eHash: eHash,
@@ -1269,11 +1671,16 @@
     ln2and5: ln2and5,
     ln10: ln10,
     ln10Hash: ln10Hash,
+    pi: pi,
+    piHash: piHash,
     
     frac: frac,
     fracResume: fracResume,
     sfrac: sfrac,
-    sfracResume: sfracResume
+    sfracResume: sfracResume,
+    qar: qar,
+    mod: mod,
+    npi: npi
   };
 
   if (nodep)module.exports = R;
