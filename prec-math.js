@@ -1141,7 +1141,7 @@
   
   function cosTrans2(a, p, i){
     if (udfp(i))i = 5;
-    if (i == 0)return [cosTaylorFrac(a, p)];
+    if (i <= 0)return [cosTaylorFrac(a, p)];
     var c = cosTrans2(mul(a, mknum("0.5")), p+3, i-1);
     c.push(sub(mul(two(), pow(c[c.length-1], two(), p+1)), one(), p));
     return c;
@@ -1240,6 +1240,191 @@
     }
     
     return div(frac1, frac2, p);
+  }
+  
+  /*function atanTaylorNoRnd2(a, p){
+    var frac;
+    var atan = a;
+    var sign = true;
+    for (var i = 3; true; i += 2, sign = !sign){
+      frac = div(powDec(a, i, p+2), mknumint(i), p+2);
+      if (byzero(frac, p+2))break;
+      if (sign)atan = sub(atan, frac);
+      else atan = add(atan, frac);
+    }
+    
+    return atan;
+  }*/
+  
+  function atanTaylorNoRnd(a, p){
+    var frac;
+    var atan = a;
+    var a2 = mul(a, a, p+5);
+    var pow = a;
+    var sign = true;
+    for (var i = 3; true; i += 2, sign = !sign){
+      pow = mul(pow, a2, p+5);
+      frac = div(pow, mknumint(i), p+5);
+      if (byzero(frac, p+2))break;
+      if (sign)atan = sub(atan, frac);
+      else atan = add(atan, frac);
+    }
+    
+    return atan;
+  }
+  
+  // Taylor Series without transform
+  // faster when a <= 0.2
+  function atanTaylorTerms(a, p){
+    return rnd(atanTaylorNoRnd(a, p), p);
+  }
+  
+  function atanTaylorFrac(a, p){
+    var sign = true;
+    var pow = a;
+    var a2 = mul(a, a, p+5);
+    var n;
+    var top = a;
+    var bot = one();
+    for (var i = 3; true; i += 2, sign = !sign){
+      n = mknumint(i);
+      pow = mul(pow, a2, p+5);
+      top = (sign?sub:add)(mul(n, top), mul(bot, pow));
+      bot = mul(bot, n);
+      if (nsiz(n)-siz(pow)-2 >= p)break;
+    }
+    
+    return div(top, bot, p);
+  }
+  
+  function atanEulerFrac(a, p){
+    var pow = a;
+    var a2 = mul(a, a, p+5);
+    var a2p1 = add(a2, one());
+    var a2p1m2 = add(a2p1, a2p1);
+    var na2p1 = a2p1;
+    var nfactsq = one();
+    var toadd;
+    var n;
+    var top = a;
+    var bot = one();
+    for (var i = 3; true; i += 2){
+      na2p1 = add(na2p1, a2p1m2);
+      pow = mul(pow, a2, p+5);
+      nfactsq = mul(nfactsq, mknumint(i-1));
+      toadd = mul(nfactsq, pow, p+5);
+      top = add(mul(top, na2p1, p+5), toadd);
+      bot = mul(bot, na2p1, p+5);
+      al("na2p1: $1 | top: $2 | bot: $3 | toadd: $4", na2p1, top, bot, toadd);
+      if (nsiz(toadd)-siz(bot)-2 >= p)break;
+    }
+    
+    return div(top, bot, p);
+  }
+  
+  function trans(a, p){
+    return div(a, add(one(), sqrt(add(one(), mul(a, a, p+2-nsiz(a))), p+2)), p);
+  }
+  
+  function doTransOrig(a, n, p){
+    for (var i = n-1; i >= 0; i--){
+      a = trans(a, p+i+2);
+    }
+    return a;
+  }
+  
+  // Taylor Series with transform
+  // faster when a >= 0.2
+  function atanTransOrig(a, p){
+    a = doTransOrig(a, 4, p);
+    var atan = atanTaylorNoRnd(a, p);
+    return rnd(mul(mknum("16"), atan), p); // 16 = 2^4
+  }
+  
+  function atanTransNew(a, p, i){
+    if (udfp(i))i = 4;
+    if (i <= 0)return atanTaylorTerms(a, p);
+    return mul(two(), atanTransNew(trans(a, p+3), p+1, i-1), p);
+  }
+  
+  function acotTaylorTerms(a, p){
+    var frac;
+    var acot = div(one(), a, p+2);
+    var a2 = mul(a, a, p+5);
+    var pow = a;
+    var sign = true;
+    for (var i = 3; true; i += 2, sign = !sign){
+      pow = mul(pow, a2, p+5);
+      frac = div(one(), mul(pow, mknumint(i)), p+2);
+      if (byzero(frac, p+2))break;
+      acot = (sign?sub:add)(acot, frac);
+    }
+    
+    return rnd(acot, p);
+  }
+  
+  function acotTaylorFrac(a, p){
+    var frac;
+    var acot = div(one(), a, p+2);
+    var a2 = mul(a, a, p+5);
+    var ta2 = mul(a2, two());
+    var loga = Math.log10(tonum(left(a, siz(a))))+siz(a);
+    var ia2 = a2;
+    var pow = a;
+    var top = one();
+    var prod = one();
+    var sign = true;
+    var i;
+    for (i = 3; true; i += 2, sign = !sign){
+      ia2 = add(ia2, ta2);
+      top = (sign?sub:add)(mul(top, ia2, p+5), prod);
+      prod = mul(prod, mknumint(i));
+      if (Math.floor(i*loga+Math.log(7)-2) >= p)break;
+    }
+    
+    return div(rnd(top, p+3-nsiz(prod)-Math.floor(i*loga)),
+               mul(prod,
+                   mul(a, powDec(a2, (i-1)/2, p+6+siz(top)-nsiz(prod)-Math.floor((2*i-1)*loga)),  
+                       p+3+siz(top)-nsiz(prod)-Math.floor(2*i*loga)),
+                   p+3+siz(top)-2*nsiz(prod)-Math.floor(2*i*loga)), p);
+  }
+  
+  function atan(a, p){
+    if (p == udf)p = prec;
+    if (p == -inf)return zero();
+    if (negp(a))return neg(atan(neg(a), p));
+    if (le(a, mknum("0.5")))return atanTaylorTerms(a, p);
+    if (ge(a, mknum("2.2")))return sub(mul(pi(p+2), mknum("0.5")), acotTaylorFrac(a, p+2), p);
+    return atanTransNew(a, p, 5);
+  }
+  
+  // acot(x) = {x<0: -acot(-x), x>=0: pi/2-atan(x)}
+  function acot(a, p){
+    if (p == udf)p = prec;
+    if (p == -inf)return zero();
+    if (negp(a))return neg(acot(neg(a), p));
+    if (le(a, mknum("0.5")))return sub(mul(pi(p+2), mknum("0.5")), atanTaylorTerms(a, p+2), p);
+    if (ge(a, mknum("2.2")))return acotTaylorFrac(a, p);
+    return sub(mul(pi(p+2), mknum("0.5")), atanTransNew(a, p+2, 5), p);
+  }
+  
+  // return atan(y/x);
+  function atan2(y, x, p){
+    if (p == udf)p = prec;
+    if (p == -inf)return zero();
+    
+    if (zerop(x)){
+      if (zerop(y))err(atan2, "y and x cannot both equal 0");
+      var pii = pi(p+3);
+      var hpi = mul(pii, mknum("0.5"), p);
+      return negp(y)?neg(hpi):hpi;
+    }
+    var atn = atan(div(y, x, p+5), p+2);
+    if (negp(x)){
+      var pii = pi(p+2);
+      return (negp(y)?sub:add)(atn, pii, p);
+    }
+    return rnd(atn, p);
   }
   
   var acothHash = hasha(mkAcothResume);
@@ -1496,6 +1681,7 @@
     mknumnull: mknumnull,
     mknumint: mknumint,
     tostr: tostr,
+    tonum: tonum,
     real: real,
     realint: realint,
 
@@ -1535,6 +1721,9 @@
     fig: fig,
     chke: chke,
     byzero: byzero,
+    
+    abs: abs,
+    neg: neg,
 
     is: is,
 
@@ -1587,6 +1776,22 @@
     sinShift: sinShift,
     sinTrans: sinTrans,
     sinTaylorFrac: sinTaylorFrac,
+    
+    atanTaylorNoRnd: atanTaylorNoRnd,
+    atanTaylorTerms: atanTaylorTerms,
+    atanTaylorFrac: atanTaylorFrac,
+    atanEulerFrac: atanEulerFrac,
+    atanTransOrig: atanTransOrig,
+    atanTransNew: atanTransNew,
+    doTransOrig: doTransOrig,
+    trans: trans,
+    
+    acotTaylorTerms: acotTaylorTerms,
+    acotTaylorFrac: acotTaylorFrac,
+    
+    atan: atan,
+    acot: acot,
+    atan2: atan2,
     
     acothCont: acothCont,
     acothHash: acothHash,
