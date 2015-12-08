@@ -1,4 +1,4 @@
-/***** Perfectly Precise Math Library 5.0 *****/
+/***** Perfectly Precise Math Library 5.0.0 *****/
 
 /* require tools 4.7.0 */
 
@@ -27,7 +27,6 @@
   var isa = $.T.isa;
   var tagp = $.T.tagp;
   
-  var out = $.out;
   var al = $.al;
 
   var err = $.err;
@@ -1427,6 +1426,24 @@
     return rnd(atn, p);
   }
   
+  function sinh(a, p){
+    if (p == udf)p = prec;
+    if (p == -inf)return zero();
+    
+    var ex = exp(a, p+4);
+    var recexp = div(one(), ex, p+2);
+    return mul(sub(ex, recexp), mknum("0.5"), p);
+  }
+  
+  function cosh(a, p){
+    if (p == udf)p = prec;
+    if (p == -inf)return zero();
+    
+    var ex = exp(a, p+2);
+    var recexp = div(one(), ex, p+2);
+    return mul(add(ex, recexp), mknum("0.5"), p);
+  }
+  
   var acothHash = hasha(mkAcothResume);
   var acothCont = acothHash.run;
   
@@ -1792,6 +1809,9 @@
     atan: atan,
     acot: acot,
     atan2: atan2,
+    
+    sinh: sinh,
+    cosh: cosh,
     
     acothCont: acothCont,
     acothHash: acothHash,
