@@ -62,6 +62,7 @@
 
   // tostr(mknum(a)) -> a
   function tostr(a){
+    if (zerop(a))return "0";
     var b = rightStr(a.dat, a.exp);
     if (negp(a))return negStr(b);
     return b;
@@ -82,7 +83,7 @@
   // real(N(false, "35", 2)) -> N(false, "35", 2)
   function real(a){
     if (realp(a))return trim(a);
-    if (nump(a))return real(mkstr(a));
+    if (nump(a))return real(str(a));
     if (strp(a)){
       if (!vldpStr(a))return false;
       return mknum(a);
@@ -125,23 +126,27 @@
   function two(){
     return N(false, "2", 0);
   }
+  
+  function half(){
+    return N(false, "5", -1);
+  }
 
   function realp(a){
     return tagp(a) && isa("real", a);
   }
 
   ////// Default precision //////
-
-  var prec = 16;
-
-  function gprec(p){
-    return prec;
+  
+  var precision = 16;
+  
+  function prec(p){
+    return precision;
   }
-
-  function sprec(p){
-    return prec = p;
+  
+  function setprec(p){
+    precision = p;
   }
-
+  
   ////// Real number functions //////
 
   //// Str Functions ////
@@ -365,7 +370,7 @@
 
   // long division of positive (non-zero) integers a and b
   function divIntTrn(a, b, p){
-    if (udfp(p))p = prec;
+    if (udfp(p))p = prec();
     if (p == -inf)return zero();
     var quot = "";
     var curr = "";
@@ -397,7 +402,7 @@
   }
   
   function divInt(a, b, p){
-    if (udfp(p))p = prec;
+    if (udfp(p))p = prec();
     return rnd(divIntTrn(a, b, p+1), p);
   }
 
@@ -573,7 +578,7 @@
     var h = {p: -1, dat: udf};
     
     function run(p){
-      if (p == udf)p = prec;
+      if (p == udf)p = prec();
       if (p == -inf)return zero();
       if (p <= h.p)return rnd(h.dat, p);
       h.p = p;
@@ -591,7 +596,7 @@
     var h = [];
     
     function run(p){
-      if (p == udf)p = prec;
+      if (p == udf)p = prec();
       if (p == -inf)return zero();
       if (udfp(h[0])){
         h[0] = fResume(p);
@@ -715,7 +720,7 @@
   function divTrn(a, b, p){
     if (zerop(b))err(div, "b cannot be 0");
     if (zerop(a))return a;
-    if (udfp(p))p = prec;
+    if (udfp(p))p = prec();
     if (p == -inf)return zero();
 
     var sign = negp(a) != negp(b);
@@ -726,7 +731,7 @@
   }
 
   function div(a, b, p){
-    if (udfp(p))p = prec;
+    if (udfp(p))p = prec();
     return rnd(divTrn(a, b, p+1), p);
   }
   
@@ -788,7 +793,7 @@
   //// Extended operation functions ////
 
   function ln(a, p){
-    if (p == udf)p = prec;
+    if (p == udf)p = prec();
     if (p == -inf)return zero();
     
     if (negp(a))err(ln, "a cannot be negative");
@@ -870,7 +875,7 @@
 
   function exp(a, p){
     if (zerop(a))return rnd(one(), p);
-    if (p == udf)p = prec;
+    if (p == udf)p = prec();
     if (p == -inf)return zero();
 
     if (negp(a))return div(one(), expPos(neg(a), p+2), p);
@@ -883,7 +888,7 @@
 
     var fl = trn(a);
     var d = dec(a);
-    if (gt(d, mknum("0.5"))){
+    if (gt(d, half())){
       d = sub(d, one());
       fl = add(fl, one());
     }
@@ -978,7 +983,7 @@
       if (intp(a) || p == udf)return powExact(a, tonum(b), p);
       return powDec(a, tonum(b), p);
     }
-    if (p == udf)p = prec;
+    if (p == udf)p = prec();
     var n = Math.max(p+3+Math.ceil(tonum(b)*siz(a)), 0);
     return exp(mul(b, ln(a, n+3+siz(b)), n), p);
   }
@@ -1078,13 +1083,13 @@
   
   function sqrt(a, p){
     if (negp(a))err(sqrt, "a cannot be negative");
-    if (p == udf)p = prec;
+    if (p == udf)p = prec();
     if (p == -inf)return zero();
     return sqrtShift(a, p);
   }
   
   function cos(a, p){
-    if (p == udf)p = prec;
+    if (p == udf)p = prec();
     if (p == -inf)return zero();
     
     a = abs(a);
@@ -1126,7 +1131,7 @@
   function cosTrans2(a, p, i){
     if (udfp(i))i = 5;
     if (i <= 0)return [cosTaylorFrac(a, p)];
-    var c = cosTrans2(mul(a, mknum("0.5")), p+3, i-1);
+    var c = cosTrans2(mul(a, half()), p+3, i-1);
     c.push(sub(mul(two(), pow(c[c.length-1], two(), p+1)), one(), p));
     return c;
   }
@@ -1152,7 +1157,7 @@
   }
   
   function sin(a, p){
-    if (p == udf)p = prec;
+    if (p == udf)p = prec();
     if (p == -inf)return zero();
     
     var sgn = negp(a);
@@ -1197,8 +1202,8 @@
   
   function sinTrans(a, p, i){
     if (udfp(i))i = 5;
-    var arr = cosTrans2(mul(a, mknum("0.5")), p+3, i-1);
-    var s = sinTaylorFrac(mul(a, powExact(mknum("0.5"), i)), p+3*i);
+    var arr = cosTrans2(mul(a, half()), p+3, i-1);
+    var s = sinTaylorFrac(mul(a, powExact(half(), i)), p+3*i);
     for (var k = 0; k < arr.length; k++){
       s = mul(two(), mul(s, arr[k], p+3*(i-k-1)+1), p+3*(i-k-1));
     }
@@ -1374,33 +1379,33 @@
   }
   
   function atan(a, p){
-    if (p == udf)p = prec;
+    if (p == udf)p = prec();
     if (p == -inf)return zero();
     if (negp(a))return neg(atan(neg(a), p));
     if (le(a, mknum("0.5")))return atanTaylorTerms(a, p);
-    if (ge(a, mknum("2.2")))return sub(mul(pi(p+2), mknum("0.5")), acotTaylorFrac(a, p+2), p);
+    if (ge(a, mknum("2.2")))return sub(mul(pi(p+2), half()), acotTaylorFrac(a, p+2), p);
     return atanTransNew(a, p, 5);
   }
   
   // acot(x) = {x<0: -acot(-x), x>=0: pi/2-atan(x)}
   function acot(a, p){
-    if (p == udf)p = prec;
+    if (p == udf)p = prec();
     if (p == -inf)return zero();
     if (negp(a))return neg(acot(neg(a), p));
-    if (le(a, mknum("0.5")))return sub(mul(pi(p+2), mknum("0.5")), atanTaylorTerms(a, p+2), p);
+    if (le(a, mknum("0.5")))return sub(mul(pi(p+2), half()), atanTaylorTerms(a, p+2), p);
     if (ge(a, mknum("2.2")))return acotTaylorFrac(a, p);
-    return sub(mul(pi(p+2), mknum("0.5")), atanTransNew(a, p+2, 5), p);
+    return sub(mul(pi(p+2), half()), atanTransNew(a, p+2, 5), p);
   }
   
   // return atan(y/x);
   function atan2(y, x, p){
-    if (p == udf)p = prec;
+    if (p == udf)p = prec();
     if (p == -inf)return zero();
     
     if (zerop(x)){
       if (zerop(y))err(atan2, "y and x cannot both equal 0");
       var pii = pi(p+3);
-      var hpi = mul(pii, mknum("0.5"), p);
+      var hpi = mul(pii, half(), p);
       return negp(y)?neg(hpi):hpi;
     }
     var atn = atan(div(y, x, p+5), p+2);
@@ -1412,21 +1417,21 @@
   }
   
   function sinh(a, p){
-    if (p == udf)p = prec;
+    if (p == udf)p = prec();
     if (p == -inf)return zero();
     
     var ex = exp(a, p+4);
     var recexp = div(one(), ex, p+2);
-    return mul(sub(ex, recexp), mknum("0.5"), p);
+    return mul(sub(ex, recexp), half(), p);
   }
   
   function cosh(a, p){
-    if (p == udf)p = prec;
+    if (p == udf)p = prec();
     if (p == -inf)return zero();
     
     var ex = exp(a, p+2);
     var recexp = div(one(), ex, p+2);
-    return mul(add(ex, recexp), mknum("0.5"), p);
+    return mul(add(ex, recexp), half(), p);
   }
   
   var acothHash = hasha(mkAcothResume);
@@ -1481,7 +1486,7 @@
   // continued fraction
   function eResume(p, o){
     if (udfp(o))o = {dat: zero(), p: -1, p0: zero(), q0: one(), p1: one(), q1: one(), an: 2};
-    if (p == udf)p = prec;
+    if (p == udf)p = prec();
     if (p == -inf)return zero();
 
     var p0 = o.p0;
@@ -1598,7 +1603,7 @@
       var bn1 = b(1);
       o = {n: 0, p: -1, p0: one(), q0: zero(), p1: p1, q1: one(), prod: bn1, bn1: bn1};
     }
-    if (udfp(p))p = prec;
+    if (udfp(p))p = prec();
     if (p == -inf)return zero();
     
     var p0 = o.p0;
@@ -1638,7 +1643,7 @@
   
   function sfracResumeNd(a, p, o){
     if (udfp(o))o = {n: 0, p0: one(), q0: zero(), p1: a(0), q1: one()};
-    if (udfp(p))p = prec;
+    if (udfp(p))p = prec();
     if (p == -inf)return zero();
     
     var p0 = o.p0;
@@ -1691,7 +1696,11 @@
     zero: zero,
     one: one,
     two: two,
+    half: half,
     realp: realp,
+    
+    prec: prec,
+    setprec: setprec,
 
     gtInt: gtInt,
     addInt: addInt,
