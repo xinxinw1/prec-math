@@ -1,6 +1,6 @@
 /***** Perfectly Precise Math Library 5.0.0 *****/
 
-/* require tools 4.7.0 */
+/* require tools 4.10.3 */
 
 (function (udf){
   ////// Import //////
@@ -23,7 +23,6 @@
   var fst = $.fst_;
 
   var typ = $.T.typ;
-  var dat = $.T.dat;
   var isa = $.T.isa;
   var tagp = $.T.tagp;
   
@@ -39,12 +38,14 @@
   // mknum("0.000012") -> N(false, "12", -6)
   // mknum("-352534000") -> N(true, "352534", 3)
   // mknum("") -> zero()
+  // mknum("0") -> zero()
+  // mknum("000") -> zero()
   function mknum(a){
     var dat = remdotStr(a);
     var neg = negpStr(a);
     if (neg)dat = sli(dat, 1);
     var exp = -declenStr(a);
-    return chktrim(N(neg, dat, exp));
+    return trim(N(neg, dat, exp));
   }
   
   function mknumnull(a){
@@ -55,8 +56,8 @@
   // a = js int
   function mknumint(a){
     if (a === 0)return zero();
-    if (a < 0)return chktrimr(N(true, str(-a), 0));
-    return chktrimr(N(false, str(a), 0));
+    if (a < 0)return trimr(N(true, str(-a), 0));
+    return trimr(N(false, str(a), 0));
   }
 
   // tostr(mknum(a)) -> a
@@ -70,6 +71,7 @@
     return num(tostr(a));
   }
   
+  // a = js number
   function mkstr(a){
     if (a === 0)return "";
     return str(a);
@@ -79,8 +81,8 @@
   // real(35.35) -> N(false, "3535", -2)
   // real(N(false, "35", 2)) -> N(false, "35", 2)
   function real(a){
-    if (realp(a))return chktrim(a);
-    if (nump(a))return real(str(a));
+    if (realp(a))return trim(a);
+    if (nump(a))return real(mkstr(a));
     if (strp(a)){
       if (!vldpStr(a))return false;
       return mknum(a);
@@ -91,7 +93,7 @@
   // realint
   function realint(a){
     if (realp(a)){
-      a = chktrim(a);
+      a = trim(a);
       if (!intp(a))return false;
       return tonum(a);
     }
@@ -391,7 +393,7 @@
     }
     if (quot === "")return zero();
     for (var j = -p; j >= 1; j--)quot += "0";
-    return chktrimr(N(false, quot, exp));
+    return trimr(N(false, quot, exp));
   }
   
   function divInt(a, b, p){
@@ -441,38 +443,21 @@
 
   //// Processing functions ////
 
-  // needtrimr(N(true, "1530", 5)) -> true
-  function needtrimr(a){
-    return las(a.dat) === '0';
-  }
-
-  function needtriml(a){
-    return fst(a.dat) === '0';
-  }
-
   function trimr(a){
+    if (las(a.dat) !== '0')return a;
     var n = cntr("0", a.dat);
-    if (n === len(a.dat))err(trimr, "Something happened");
+    if (n === len(a.dat))return zero();
     return N(a.neg, sli(a.dat, 0, len(a.dat)-n), a.exp+n);
   }
 
   function triml(a){
+    if (fst(a.dat) !== '0')return a;
     var n = cntl("0", a.dat);
     return N(a.neg, sli(a.dat, n), a.exp);
   }
 
-  function chktrimr(a){
-    if (needtrimr(a))return trimr(a);
-    return a;
-  }
-
-  function chktriml(a){
-    if (needtriml(a))return triml(a);
-    return a;
-  }
-
-  function chktrim(a){
-    return chktriml(chktrimr(a));
+  function trim(a){
+    return triml(trimr(a));
   }
 
   // count right
@@ -692,7 +677,7 @@
     } else if (negp(b))return sub(a, neg(b), p);
 
     var arr = matexp(a, b);
-    var sum = chktrimr(N(sign, addInt(arr[0].dat, arr[1].dat), arr[0].exp));
+    var sum = trimr(N(sign, addInt(arr[0].dat, arr[1].dat), arr[0].exp));
     return udfp(p)?sum:rnd(sum, p);
   }
 
@@ -710,7 +695,7 @@
     if (gt(b, a))return neg(sub(b, a, p));
 
     var arr = matexp(a, b);
-    var diff = chktrimr(N(false, subInt(arr[0].dat, arr[1].dat), arr[0].exp));
+    var diff = trimr(N(false, subInt(arr[0].dat, arr[1].dat), arr[0].exp));
     // cannot be zero here
     return udfp(p)?diff:rnd(diff, p);
   }
@@ -723,7 +708,7 @@
     if (negp(a))a = neg(a);
     if (negp(b))b = neg(b);
 
-    var prod = chktrimr(N(sign, mulInt(a.dat, b.dat), a.exp+b.exp));
+    var prod = trimr(N(sign, mulInt(a.dat, b.dat), a.exp+b.exp));
     return udfp(p)?prod:rnd(prod, p);
   }
   
@@ -762,7 +747,7 @@
     var round = sli(a.dat, 0, pos);
     if (f(num(a.dat[pos])))round = add1Int(round);
     if (round === "")return zero();
-    return chktrimr(N(a.neg, round, -p));
+    return trimr(N(a.neg, round, -p));
   }
 
   function rnd(a, p){
@@ -797,7 +782,7 @@
     if (pos >= len(a.dat))return zero();
     var decimal = sli(a.dat, pos);
     if (decimal === "")return zero();
-    return chktriml(N(a.neg, decimal, a.exp));
+    return triml(N(a.neg, decimal, a.exp));
   }
 
   //// Extended operation functions ////
@@ -1727,6 +1712,7 @@
     
     trimr: trimr,
     triml: triml,
+    trim: trim,
     cntr: cntr,
     cntl: cntl,
     right: right,
