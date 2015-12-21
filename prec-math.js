@@ -489,7 +489,7 @@
     return right(a, -n);
   }
 
-  function wneg(a, neg){
+  function wneg(neg, a){
     if (zerop(a))return a;
     return N(neg, a.dat, a.exp);
   }
@@ -569,6 +569,11 @@
     if (pos < 0)return true;
     if (pos > 0)return false;
     return num(a.dat[pos]) < 5;
+  }
+  
+  // return byzero(sub(a, b), p);
+  function diffbyzero(a, b, p){
+    return byzero(sub(a, b), p);
   }
   
   // hash simple (ie. no resume)
@@ -727,7 +732,7 @@
     if (negp(a))a = neg(a);
     if (negp(b))b = neg(b);
     // x-(a.exp-b.exp) = p --> x = p+a.exp-b.exp
-    return wneg(right(divIntTrn(a.dat, b.dat, p+a.exp-b.exp), a.exp-b.exp), sign);
+    return wneg(sign, right(divIntTrn(a.dat, b.dat, p+a.exp-b.exp), a.exp-b.exp));
   }
 
   function div(a, b, p){
@@ -1231,6 +1236,24 @@
     return div(frac1, frac2, p);
   }
   
+  function sinh(a, p){
+    if (p == udf)p = prec();
+    if (p == -inf)return zero();
+    
+    var ex = exp(a, p+4);
+    var recexp = div(one(), ex, p+2);
+    return mul(sub(ex, recexp), half(), p);
+  }
+  
+  function cosh(a, p){
+    if (p == udf)p = prec();
+    if (p == -inf)return zero();
+    
+    var ex = exp(a, p+2);
+    var recexp = div(one(), ex, p+2);
+    return mul(add(ex, recexp), half(), p);
+  }
+  
   /*function atanTaylorNoRnd2(a, p){
     var frac;
     var atan = a;
@@ -1416,24 +1439,53 @@
     return rnd(atn, p);
   }
   
-  function sinh(a, p){
+  //// Other functions ////
+  
+  function fact(a){
+    if (decp(a) || negp(a))err(fact, "a must be a positive integer");
+    return mulran(1, tonum(a));
+  }
+  
+  function factDiv(a){
+    return mulran(1, a);
+  }
+  
+  function bin(n, k){
+    if (gt(k, n))err(bin, "n must be >= k");
+    if (!intp(k) || !intp(n) || negp(k) || negp(n)){
+      err(bin, "n and k must be positive integers");
+    }
+    n = tonum(n); k = tonum(k);
+    return div(mulran(k+1, n), factDiv(n-k));
+  }
+  
+  // @param num n
+  // @param num m
+  // @return real prod
+  function mulran(n, m){
+    if (n == m)return mknumint(n);
+    if (m < n)return one();
+    return mul(mulran(n, Math.floor((n+m)/2)), mulran(Math.floor((n+m)/2)+1, m));
+  }
+  
+  // http://en.wikipedia.org/wiki/Arithmetic%E2%80%93geometric_mean
+  function agm(a, b, p){
     if (p == udf)p = prec();
     if (p == -inf)return zero();
     
-    var ex = exp(a, p+4);
-    var recexp = div(one(), ex, p+2);
-    return mul(sub(ex, recexp), half(), p);
-  }
-  
-  function cosh(a, p){
-    if (p == udf)p = prec();
-    if (p == -inf)return zero();
+    var c, d;
+    while (true){
+      c = mul(add(a, b), half(), p+2);
+      d = sqrt(mul(a, b, p+5+siz(a)+siz(b)), p+2);
+      if (diffbyzero(a, c, p))break;
+      a = c; b = d;
+    }
     
-    var ex = exp(a, p+2);
-    var recexp = div(one(), ex, p+2);
-    return mul(add(ex, recexp), half(), p);
+    return rnd(c, p);
   }
   
+  //// Mathematical constants ////
+
   var acothHash = hasha(mkAcothResume);
   var acothCont = acothHash.run;
   
@@ -1478,8 +1530,6 @@
     };
   }
   
-  //// Mathematical constants ////
-
   var eHash = hashp(eResume);
   var e = eHash.run;
   
@@ -1733,6 +1783,7 @@
     fig: fig,
     chke: chke,
     byzero: byzero,
+    diffbyzero: diffbyzero,
     
     abs: abs,
     neg: neg,
@@ -1789,6 +1840,9 @@
     sinTrans: sinTrans,
     sinTaylorFrac: sinTaylorFrac,
     
+    sinh: sinh,
+    cosh: cosh,
+    
     atanTaylorNoRnd: atanTaylorNoRnd,
     atanTaylorTerms: atanTaylorTerms,
     atanTaylorFrac: atanTaylorFrac,
@@ -1805,8 +1859,10 @@
     acot: acot,
     atan2: atan2,
     
-    sinh: sinh,
-    cosh: cosh,
+    fact: fact,
+    bin: bin,
+    mulran: mulran,
+    agm: agm,
     
     acothCont: acothCont,
     acothHash: acothHash,
