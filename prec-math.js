@@ -1,4 +1,4 @@
-/***** Perfectly Precise Math Library 5.0.0 *****/
+/***** Perfectly Precise Math Library 5.1.0 *****/
 
 /* require tools 4.12.0 */
 
@@ -966,7 +966,8 @@
     
     if (negp(b)){
       b = neg(b);
-      var n = p+2+Math.ceil(-2*tonum(b)*nsiz(a));
+      if (udfp(p))p = prec();
+      var n = Math.max(p+3+Math.ceil(-2*tonum(b)*nsiz(a)), 1+Math.ceil(-tonum(b)*nsiz(a)));
       return div(one(), powPos(a, b, n), p);
     }
     return powPos(a, b, p);
