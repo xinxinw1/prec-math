@@ -1,6 +1,6 @@
 /***** Perfectly Precise Math Library 5.0.0 *****/
 
-/* require tools 4.10.3 */
+/* require tools 4.12.0 */
 
 (function (udf){
   ////// Import //////
@@ -13,6 +13,8 @@
   var udfp = $.udfp;
   var nump = $.nump;
   var strp = $.strp;
+  
+  var addDspFn = $.addDspFn;
 
   var inp = $.inp;
 
@@ -67,6 +69,10 @@
     if (negp(a))return negStr(b);
     return b;
   }
+  
+  addDspFn("real", function (a){
+    return "<real " + tostr(a) + ">";
+  });
   
   function tonum(a){
     return num(tostr(a));
