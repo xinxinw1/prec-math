@@ -1,4 +1,4 @@
-/***** Perfectly Precise Math Library 5.1.1 *****/
+/***** Perfectly Precise Math Library 5.1.2 *****/
 
 /* require tools 4.12.0 */
 
@@ -27,6 +27,8 @@
   var typ = $.T.typ;
   var isa = $.T.isa;
   var tagp = $.T.tagp;
+  
+  var worig = $.worig;
   
   var al = $.al;
 
@@ -586,13 +588,13 @@
   function hashp(f){
     var h = {p: -inf, dat: zero()};
     
-    return function (p){
+    return worig(f, function (p){
       if (p == udf)p = prec();
       if (p <= h.p)return rnd(h.dat, p);
       h.p = p;
       h.dat = f(p);
       return h.dat;
-    }
+    });
   }
   
   // make regular f(p) from fResume(p, o)
