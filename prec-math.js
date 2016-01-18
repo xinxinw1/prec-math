@@ -1,4 +1,4 @@
-/***** Perfectly Precise Math Library 5.1.0 *****/
+/***** Perfectly Precise Math Library 5.1.1 *****/
 
 /* require tools 4.12.0 */
 
@@ -582,57 +582,46 @@
     return byzero(sub(a, b), p);
   }
   
-  // hash simple (ie. no resume)
-  // f(p) -> <real 35.25352>
-  function hashs(f){
-    //  h = [p, dat]
-    var h = {p: -1, dat: udf};
+  // memoize f(p) using rnd
+  function hashp(f){
+    var h = {p: -inf, dat: zero()};
     
-    function run(p){
+    return function (p){
       if (p == udf)p = prec();
-      if (p == -inf)return zero();
       if (p <= h.p)return rnd(h.dat, p);
       h.p = p;
       h.dat = f(p);
       return h.dat;
     }
-    
-    return {h: h, run: run};
   }
   
-  // hashp = hash over precisions
-  // hashp(fResume)(p) -> fResume(p).dat
-  // fResume(p, o) -> {dat: <real 3>, p: 50, ...}
-  function hashp(fResume){
-    var h = [];
+  // make regular f(p) from fResume(p, o)
+  function hashr(fResume){
+    var o = {};
+    var first = true;
     
-    function run(p){
-      if (p == udf)p = prec();
-      if (p == -inf)return zero();
-      if (udfp(h[0])){
-        h[0] = fResume(p);
+    return hashp(function (p){
+      if (first){
+        o = fResume(p);
+        first = false;
       } else {
-        if (p <= h[0].p)return rnd(h[0].dat, p);
-        h[0] = fResume(p, h[0]);
+        o = fResume(p, o);
       }
-      return h[0].dat;
-    }
-    
-    return {h: h, run: run};
+      return o.dat;
+    });
   }
   
   // hash over a and p
   // mkFResume(a)(p, o) -> o = {dat: <real 3>, p: 50, ...}
+  // hasha(mkFResume) -> f(a, p)
   function hasha(mkFResume){
     var h = {};
     
-    function run(a, p){
-      var d = a.dat;
-      if (udfp(h[d]))h[d] = hashp(mkFResume(a));
-      return h[d].run(p);
-    }
-    
-    return {h: h, run: run};
+    return function (a, p){
+      var d = a.neg + "|" + a.dat + "|" + a.exp;
+      if (udfp(h[d]))h[d] = hashr(mkFResume(a));
+      return h[d](p);
+    };
   }
 
   //// Sign functions ////
@@ -1493,8 +1482,7 @@
   
   //// Mathematical constants ////
 
-  var acothHash = hasha(mkAcothResume);
-  var acothCont = acothHash.run;
+  var acothCont = hasha(mkAcothResume);
   
   // var acoth2Resume = mkAcothResume(two());
   // a must be > 1
@@ -1516,8 +1504,7 @@
     };
   }
   
-  var acotHash = hasha(mkAcotResume);
-  var acotCont = acotHash.run;
+  var acotCont = hasha(mkAcotResume);
   
   // continued fraction
   // transform of http://en.wikipedia.org/wiki/Inverse_trigonometric_functions#Continued_fractions_for_arctangent
@@ -1537,17 +1524,15 @@
     };
   }
   
-  var eHash = hashp(eResume);
-  var e = eHash.run;
+  var e = hashr(eResume);
   
   // continued fraction
   function eResume(p, o){
-    if (udfp(o))o = {dat: zero(), p: -1, p0: zero(), q0: one(), p1: one(), q1: one(), an: 2};
+    if (udfp(o))o = {p0: zero(), q0: one(), p1: one(), q1: one(), an: 2};
     if (p == udf)p = prec();
-    if (p == -inf)return zero();
-
+    
     var p0 = o.p0;
-    var q0 = o.q0
+    var q0 = o.q0;
     var p1 = o.p1;
     var q1 = o.q1;
     var pn = p1;
@@ -1563,11 +1548,30 @@
     }
     var exp = add(one(), div(mul(two(), pn), qn, p+2));
     exp = rnd(exp, p);
-    return {dat: exp, p: p, p0: p0, q0: q0, p1: p1, q1: q1, an: an-4};
+    return {dat: exp, p0: p0, q0: q0, p1: p1, q1: q1, an: an-4};
   }
   
-  var ln2Hash = hashs(ln2Machin);
-  var ln2 = ln2Hash.run;
+  var phi = hashr(phiResume);
+  
+  // continued fraction
+  function phiResume(p, o){
+    if (udfp(o))o = {f0: one(), f1: two()};
+    if (p == udf)p = prec();
+    
+    var f0 = o.f0;
+    var f1 = o.f1;
+    var fn;
+    while (true){
+      fn = add(f0, f1);
+      f0 = f1;
+      f1 = fn;
+      if (2*nsiz(fn)-2 >= p)break;
+    }
+    
+    return {dat: div(f1, f0, p), f0: f0, f1: f1};
+  }
+  
+  var ln2 = hashp(ln2Machin);
   
   // Machin-like formula
   // ln(2) = 144*acoth(251)+54*acoth(449)-38*acoth(4801)+62*acoth(8749)
@@ -1581,8 +1585,7 @@
     return rnd(sum, p);
   }
   
-  var ln5Hash = hashs(ln5Machin);
-  var ln5 = ln5Hash.run;
+  var ln5 = hashp(ln5Machin);
   
   // Machin-like formula
   // ln(5) = 334*acoth(251)+126*acoth(449)-88*acoth(4801)+144*acoth(8749)
@@ -1599,8 +1602,7 @@
     return [ln2(p), ln5(p)];
   }
   
-  var ln10Hash = hashs(ln10Machin);
-  var ln10 = ln10Hash.run;
+  var ln10 = hashp(ln10Machin);
   
   // Machin-like formula
   // ln(10) = 478*acoth(251)+180*acoth(449)-126*acoth(4801)+206*acoth(8749)
@@ -1613,8 +1615,7 @@
     return rnd(sum, p);
   }
   
-  var piHash = hashs(piMachin);
-  var pi = piHash.run;
+  var pi = hashp(piMachin);
   
   // Machin-like formula 44*acot(57)+7*acot(239)-12*acot(682)+24*acot(12943)
   // http://en.wikipedia.org/wiki/Machin-like_formula#More_terms
@@ -1648,7 +1649,6 @@
   // a and b must output real objects or null
   // a(0) cannot be null
   // o = {dat (opt), p, n, p0, q0, p1, q1, prod, bn1}
-  // p should be the prec given
   // p1, q1 should be the latest p1 and q1, the ones used to calculate dat
   //   and involving, at most, a(n) and b(n)
   // prod should be b(1)*b(2)*...*b(n+1), unless b(n+1) === null, in which case it
@@ -1658,10 +1658,9 @@
     if (udfp(o)){
       var p1 = a(0);
       var bn1 = b(1);
-      o = {n: 0, p: -1, p0: one(), q0: zero(), p1: p1, q1: one(), prod: bn1, bn1: bn1};
+      o = {n: 0, p0: one(), q0: zero(), p1: p1, q1: one(), prod: bn1, bn1: bn1};
     }
-    if (udfp(p))p = prec();
-    if (p == -inf)return zero();
+    if (p == udf)p = prec();
     
     var p0 = o.p0;
     var q0 = o.q0;
@@ -1685,7 +1684,7 @@
       p0 = p1; q0 = q1;
       p1 = pn; q1 = qn;
     }
-    return {n: n-1, p: p, p0: p0, q0: q0, p1: p1, q1: q1, prod: prod, bn1: bn1};
+    return {n: n-1, p0: p0, q0: q0, p1: p1, q1: q1, prod: prod, bn1: bn1};
   }
   
   function sfrac(a, p){
@@ -1700,8 +1699,7 @@
   
   function sfracResumeNd(a, p, o){
     if (udfp(o))o = {n: 0, p0: one(), q0: zero(), p1: a(0), q1: one()};
-    if (udfp(p))p = prec();
-    if (p == -inf)return zero();
+    if (p == udf)p = prec();
     
     var p0 = o.p0;
     var q0 = o.q0;
@@ -1791,6 +1789,9 @@
     chke: chke,
     byzero: byzero,
     diffbyzero: diffbyzero,
+    hashp: hashp,
+    hashr: hashr,
+    hasha: hasha,
     
     abs: abs,
     neg: neg,
@@ -1872,22 +1873,17 @@
     agm: agm,
     
     acothCont: acothCont,
-    acothHash: acothHash,
     acotCont: acotCont,
-    acotHash: acotHash,
     
     e: e,
-    eHash: eHash,
     eResume: eResume,
+    phi: phi,
+    phiResume: phiResume,
     ln2: ln2,
-    ln2Hash: ln2Hash,
     ln5: ln5,
-    ln5Hash: ln5Hash,
     ln2and5: ln2and5,
     ln10: ln10,
-    ln10Hash: ln10Hash,
     pi: pi,
-    piHash: piHash,
     
     frac: frac,
     fracResume: fracResume,
