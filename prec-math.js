@@ -1,6 +1,6 @@
-/***** Perfectly Precise Math Library 5.1.2 *****/
+/***** Perfectly Precise Math Library *****/
 
-/* require tools 4.12.0 */
+/* require tools */
 
 (function (udf){
   ////// Import //////
@@ -749,10 +749,14 @@
     if (p == -inf)return zero();
     if (udfp(p))p = 0;
     var pos = len(a.dat)+a.exp+p;
-    if (pos < 0)return zero();
     if (pos >= len(a.dat))return a;
-    var round = sli(a.dat, 0, pos);
-    if (f(num(a.dat[pos])))round = add1Int(round);
+    if (pos < 0){
+      var round = "";
+      if (f(0))round = add1Int(round);
+    } else {
+      var round = sli(a.dat, 0, pos);
+      if (f(num(a.dat[pos])))round = add1Int(round);
+    }
     if (round === "")return zero();
     return trimr(N(a.neg, round, -p));
   }
