@@ -14,7 +14,7 @@
   var nump = $.nump;
   var strp = $.strp;
   
-  var addDspFn = $.addDspFn;
+  var setDspFn = $.setDspFn;
 
   var inp = $.inp;
 
@@ -24,9 +24,9 @@
   var las = $.las_;
   var fst = $.fst_;
 
-  var typ = $.T.typ;
-  var isa = $.T.isa;
-  var tagp = $.T.tagp;
+  var typ = $.typ;
+  var isa = $.isa;
+  var tagp = $.tagp;
   
   var worig = $.worig;
   
@@ -72,7 +72,7 @@
     return b;
   }
   
-  addDspFn("real", function (a){
+  setDspFn("real", function (a){
     return "<real " + tostr(a) + ">";
   });
   
