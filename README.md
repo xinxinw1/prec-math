@@ -196,7 +196,7 @@ logfn(f)          set logger callback; takes a function(subj, data);
 
 ### Conversion
 
-Replace: `test([^(]*)\('([^']*)'` with `assert.test$1\($2`
+Replace: `(?<!\.)test([^(]*)\('([^']*)'` with `assert.test$1\($2`
 
 Replace: `testerr\('([^']*)'` with `assert.throws\(function (){\n    $1;\n  }`
 
