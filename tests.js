@@ -1,17 +1,3 @@
-QUnit.assert.testnum = function (a, neg, dat, exp){
-  this.same(a.neg, neg, 'testing neg of ' + $.dspSimp(a));
-  this.same(a.dat, dat, 'testing dat of ' + $.dspSimp(a));
-  this.same(a.exp, exp, 'testing exp of ' + $.dspSimp(a));
-};
-
-QUnit.assert.teststr = function (a, x){
-  this.same(R.tostr(a), x, 'testing tostr of ' + $.dspSimp(a));
-};
-
-QUnit.assert.testspd = function (fn, s){
-  this.same($.tim1(fn), s, $.le, 'testing speed less than or equal to ' + s);
-};
-
 QUnit.test('Converters', function (assert){
   assert.testnum(R.mknum("35.35"), false, "3535", -2);
   assert.testnum(R.mknum("0.0001"), false, "1", -4);
