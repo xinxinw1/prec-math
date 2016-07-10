@@ -674,14 +674,30 @@ QUnit.test('gcd', function (assert){
   assert.teststr(R.gcd(R.mknum("744"), R.mknum("264")), "24");
 });
 
-QUnit.test('binary', function (assert){
-  assert.same(R.binary(R.mknum("0")), [], $.iso);
-  assert.same(R.binary(R.mknum("1")), [1], $.iso);
-  assert.same(R.binary(R.mknum("2")), [0, 1], $.iso);
-  assert.same(R.binary(R.mknum("3")), [1, 1], $.iso);
-  assert.same(R.binary(R.mknum("4")), [0, 0, 1], $.iso);
-  assert.same(R.binary(R.mknum("5")), [1, 0, 1], $.iso);
-  assert.same(R.binary(R.mknum("6")), [0, 1, 1], $.iso);
-  assert.same(R.binary(R.mknum("7")), [1, 1, 1], $.iso);
-  assert.same(R.binary(R.mknum("8")), [0, 0, 0, 1], $.iso);
+QUnit.test('real2bin', function (assert){
+  assert.same(R.real2bin(R.mknum("0")), [], $.iso);
+  assert.same(R.real2bin(R.mknum("1")), [1], $.iso);
+  assert.same(R.real2bin(R.mknum("2")), [0, 1], $.iso);
+  assert.same(R.real2bin(R.mknum("3")), [1, 1], $.iso);
+  assert.same(R.real2bin(R.mknum("4")), [0, 0, 1], $.iso);
+  assert.same(R.real2bin(R.mknum("5")), [1, 0, 1], $.iso);
+  assert.same(R.real2bin(R.mknum("6")), [0, 1, 1], $.iso);
+  assert.same(R.real2bin(R.mknum("7")), [1, 1, 1], $.iso);
+  assert.same(R.real2bin(R.mknum("8")), [0, 0, 0, 1], $.iso);
+});
+
+QUnit.test('randPowTen', function (assert){
+  assert.testRandHash(100, 1000000, 5, function (){return R.tonum(R.randPowTen(2));});
+});
+
+QUnit.test('randUpTo', function (assert){
+  assert.testRandHash(100, 1000000, 5, function (){return R.tonum(R.randUpTo(R.mknum("99")));});
+  assert.testRandHash(64, 1000000, 5, function (){return R.tonum(R.randUpTo(R.mknum("63")));});
+});
+
+QUnit.test("rand", function (assert){
+  var randfn = function (min, max){
+    return R.tonum(R.rand(R.real(min), R.real(max)));
+  };
+  assert.testRandHashRange(1000000, 1000010, 10000, 10, randfn);
 });

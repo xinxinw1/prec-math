@@ -1745,7 +1745,7 @@
   // square and multiply algorithm
   // return mod(pow(a, b), m)
   function modPow(a, b, m){
-    var bin = binary(b);
+    var bin = real2bin(b);
     var arr = [];
     var result = one();
     for (var i = 0; i < bin.length; i++){
@@ -1785,8 +1785,8 @@
   // a is an integer
   // returns an array of js num 0 and 1
   // a = r[0]*2^0 + r[1]*2^1 + r[2]*2^2 + ...
-  function binary(a){
-    if (!intp(a) || negp(a))err(binary, "a = $1 is not a positive integer", a);
+  function real2bin(a){
+    if (!intp(a) || negp(a))err(real2bin, "a = $1 must be a non-negative integer", a);
     var t = two();
     var r = [];
     while (!zerop(a)){
@@ -1796,6 +1796,35 @@
       a = quot;
     }
     return r;
+  }
+  
+  //// Random ////
+  
+  // pow is js int
+  // result is real int in [0, 10^pow)
+  function randPowTen(pow){
+    var dat = "";
+    for (var i = pow; i >= 1; i--){
+      dat += String($.rand(0, 9));
+    }
+    return trim(N(false, dat, 0));
+  }
+  
+  // max is real int
+  // result is real int in [0, max]
+  function randUpTo(max){
+    if (!intp(max) || negp(max))err(randUpTo, "max = $1 must be a non-negative integer", max);
+    var b = siz(max);
+    var n;
+    do {
+      n = randPowTen(b);
+    } while (gt(n, max));
+    return n;
+  }
+  
+  // result is int in [min, max]
+  function rand(min, max){
+    return add(min, randUpTo(sub(max, min)));
   }
 
   ////// R object exposure //////
@@ -1959,7 +1988,11 @@
     gcd: gcd,
     npi: npi,
     
-    binary: binary
+    real2bin: real2bin,
+    
+    randPowTen: randPowTen,
+    randUpTo: randUpTo,
+    rand: rand
   };
 
   if (nodep)module.exports = R;
