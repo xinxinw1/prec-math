@@ -1734,8 +1734,28 @@
     return [q, sub(a, mul(b, q))];
   }
   
+  function quo(a, b){
+    return qar(a, b)[0];
+  }
+  
   function mod(a, b){
     return qar(a, b)[1];
+  }
+  
+  function gcd(a, b){
+    var args = arguments;
+    if (args.length === 0)return one();
+    var r = abs(args[0]);
+    for (var i = 1; i < args.length; i++){
+      r = gcd2(r, abs(args[i]));
+    }
+    return r;
+  }
+  
+  
+  function gcd2(a, b){
+    if (is(b, zero()))return a;
+    return gcd2(b, mod(a, b));
   }
   
   function npi(a){
@@ -1896,7 +1916,10 @@
     sfrac: sfrac,
     sfracResume: sfracResume,
     qar: qar,
+    quo: quo,
+    rem: mod,
     mod: mod,
+    gcd: gcd,
     npi: npi
   };
 

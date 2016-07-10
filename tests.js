@@ -598,3 +598,73 @@ QUnit.test('fact and bin', function (assert){
 QUnit.test('agm', function (assert){
   assert.teststr(R.agm(R.mknum("2"), R.mknum("3"), 16), "2.4746804362363045");
 });
+
+QUnit.assert.testarr = function (a, a1, a2){
+  this.teststr(a[0], a1);
+  this.teststr(a[1], a2);
+};
+
+QUnit.test('qar', function (assert){
+  assert.testarr(R.qar(R.mknum("1"), R.mknum("2")), "0", "1");
+  assert.testarr(R.qar(R.mknum("1"), R.mknum("-2")), "0", "1");
+  assert.testarr(R.qar(R.mknum("-1"), R.mknum("2")), "-1", "1");
+  assert.testarr(R.qar(R.mknum("-1"), R.mknum("-2")), "1", "1");
+  assert.testarr(R.qar(R.mknum("2"), R.mknum("2")), "1", "0");
+  assert.testarr(R.qar(R.mknum("2"), R.mknum("-2")), "-1", "0");
+  assert.testarr(R.qar(R.mknum("-2"), R.mknum("2")), "-1", "0");
+  assert.testarr(R.qar(R.mknum("-2"), R.mknum("-2")), "1", "0");
+  assert.testarr(R.qar(R.mknum("13"), R.mknum("5")), "2", "3");
+  assert.testarr(R.qar(R.mknum("13"), R.mknum("-5")), "-2", "3");
+  assert.testarr(R.qar(R.mknum("-13"), R.mknum("5")), "-3", "2");
+  assert.testarr(R.qar(R.mknum("-13"), R.mknum("-5")), "3", "2");
+  assert.testarr(R.qar(R.mknum("13.3"), R.mknum("3.5")), "3", "2.8");
+  assert.testarr(R.qar(R.mknum("13.3"), R.mknum("-3.5")), "-3", "2.8");
+  assert.testarr(R.qar(R.mknum("-13.3"), R.mknum("3.5")), "-4", "0.7");
+  assert.testarr(R.qar(R.mknum("-13.3"), R.mknum("-3.5")), "4", "0.7");
+  assert.testarr(R.qar(R.mknum("0"), R.mknum("3.5")), "0", "0");
+  assert.testarr(R.qar(R.mknum("0"), R.mknum("-3.5")), "0", "0");
+  assert.throws(function (){
+    R.qar(R.mknum("3.5"), R.mknum("0"));
+  });
+  assert.throws(function (){
+    R.qar(R.mknum("-3.5"), R.mknum("0"));
+  });
+});
+
+
+QUnit.test('mod', function (assert){
+  assert.teststr(R.mod(R.mknum("1"), R.mknum("1")), "0");
+  assert.teststr(R.mod(R.mknum("0"), R.mknum("1")), "0");
+  assert.teststr(R.mod(R.mknum("7"), R.mknum("3")), "1");
+  assert.teststr(R.mod(R.mknum("20"), R.mknum("15")), "5");
+  assert.teststr(R.mod(R.mknum("432"), R.mknum("76")), "52");
+  assert.teststr(R.mod(R.mknum("744"), R.mknum("264")), "216");
+  assert.teststr(R.mod(R.mknum("264"), R.mknum("216")), "48");
+  assert.teststr(R.mod(R.mknum("216"), R.mknum("48")), "24");
+  assert.teststr(R.mod(R.mknum("48"), R.mknum("24")), "0");
+  assert.teststr(R.mod(R.mknum("-5"), R.mknum("2")), "1");
+  
+});
+
+QUnit.test('gcd', function (assert){
+  assert.teststr(R.gcd(R.mknum("1"), R.mknum("1")), "1");
+  
+  assert.teststr(R.gcd(R.mknum("1"), R.mknum("0")), "1");
+  assert.teststr(R.gcd(R.mknum("0"), R.mknum("1")), "1");
+  assert.teststr(R.gcd(R.mknum("-1"), R.mknum("0")), "1");
+  assert.teststr(R.gcd(R.mknum("0"), R.mknum("-1")), "1");
+  
+  assert.teststr(R.gcd(R.mknum("54"), R.mknum("24")), "6");
+  assert.teststr(R.gcd(R.mknum("-54"), R.mknum("24")), "6");
+  assert.teststr(R.gcd(R.mknum("54"), R.mknum("-24")), "6");
+  assert.teststr(R.gcd(R.mknum("-54"), R.mknum("-24")), "6");
+  
+  assert.teststr(R.gcd(R.mknum("5.4"), R.mknum("2.4")), "0.6");
+  assert.teststr(R.gcd(R.mknum("54"), R.mknum("2.4")), "1.2");
+  assert.teststr(R.gcd(R.mknum("5.4"), R.mknum("24")), "0.6");
+  
+  assert.teststr(R.gcd(R.mknum("7"), R.mknum("3")), "1");
+  assert.teststr(R.gcd(R.mknum("20"), R.mknum("15")), "5");
+  assert.teststr(R.gcd(R.mknum("432"), R.mknum("76")), "4");
+  assert.teststr(R.gcd(R.mknum("744"), R.mknum("264")), "24");
+});
