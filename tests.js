@@ -668,3 +668,15 @@ QUnit.test('gcd', function (assert){
   assert.teststr(R.gcd(R.mknum("432"), R.mknum("76")), "4");
   assert.teststr(R.gcd(R.mknum("744"), R.mknum("264")), "24");
 });
+
+QUnit.test('binary', function (assert){
+  assert.same(R.binary(R.mknum("0")), [], $.iso);
+  assert.same(R.binary(R.mknum("1")), [1], $.iso);
+  assert.same(R.binary(R.mknum("2")), [0, 1], $.iso);
+  assert.same(R.binary(R.mknum("3")), [1, 1], $.iso);
+  assert.same(R.binary(R.mknum("4")), [0, 0, 1], $.iso);
+  assert.same(R.binary(R.mknum("5")), [1, 0, 1], $.iso);
+  assert.same(R.binary(R.mknum("6")), [0, 1, 1], $.iso);
+  assert.same(R.binary(R.mknum("7")), [1, 1, 1], $.iso);
+  assert.same(R.binary(R.mknum("8")), [0, 0, 0, 1], $.iso);
+});

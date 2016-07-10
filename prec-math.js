@@ -1761,6 +1761,23 @@
   function npi(a){
     return divTrn(a, pi(declen(a)+3+siz(a)), 0);
   }
+  
+  //// Binary ////
+  
+  // a is an integer
+  // returns an array of js num 0 and 1
+  // a = r[0]*2^0 + r[1]*2^1 + r[2]*2^2 + ...
+  function binary(a){
+    if (!intp(a) || negp(a))err(binary, "a = $1 is not a positive integer", a);
+    var r = [];
+    while (!zerop(a)){
+      var arr = qar(a, two());
+      var quot = arr[0]; var rem = arr[1];
+      r.push(zerop(rem)?0:1);
+      a = quot;
+    }
+    return r;
+  }
 
   ////// R object exposure //////
 
@@ -1920,7 +1937,9 @@
     rem: mod,
     mod: mod,
     gcd: gcd,
-    npi: npi
+    npi: npi,
+    
+    binary: binary
   };
 
   if (nodep)module.exports = R;
