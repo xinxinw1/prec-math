@@ -1742,6 +1742,25 @@
     return qar(a, b)[1];
   }
   
+  // square and multiply algorithm
+  // return mod(pow(a, b), m)
+  function modPow(a, b, m){
+    var bin = binary(b);
+    var arr = [];
+    var result = one();
+    for (var i = 0; i < bin.length; i++){
+      if (i === 0){
+        arr[i] = mod(a, m);
+      } else {
+        arr[i] = mod(mul(arr[i-1], arr[i-1]), m);
+      }
+      if (bin[i] === 1){
+        result = mod(mul(result, arr[i]), m);
+      }
+    }
+    return result;
+  }
+  
   function gcd(a, b){
     var args = arguments;
     if (args.length === 0)return one();
@@ -1751,7 +1770,6 @@
     }
     return r;
   }
-  
   
   function gcd2(a, b){
     if (is(b, zero()))return a;
@@ -1769,9 +1787,10 @@
   // a = r[0]*2^0 + r[1]*2^1 + r[2]*2^2 + ...
   function binary(a){
     if (!intp(a) || negp(a))err(binary, "a = $1 is not a positive integer", a);
+    var t = two();
     var r = [];
     while (!zerop(a)){
-      var arr = qar(a, two());
+      var arr = qar(a, t);
       var quot = arr[0]; var rem = arr[1];
       r.push(zerop(rem)?0:1);
       a = quot;
@@ -1936,6 +1955,7 @@
     quo: quo,
     rem: mod,
     mod: mod,
+    modPow: modPow,
     gcd: gcd,
     npi: npi,
     

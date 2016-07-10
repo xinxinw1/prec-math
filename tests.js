@@ -644,6 +644,11 @@ QUnit.test('mod', function (assert){
   assert.teststr(R.mod(R.mknum("48"), R.mknum("24")), "0");
   assert.teststr(R.mod(R.mknum("-5"), R.mknum("2")), "1");
   
+  assert.teststr(R.modPow(R.mknum("7"), R.mknum("723"), R.mknum("13")), "5");
+  assert.teststr(R.modPow(R.mknum("56"), R.mknum("1"), R.mknum("13")), "4");
+  assert.teststr(R.modPow(R.mknum("56"), R.mknum("1"), R.mknum("13")), "4");
+  assert.teststr(R.modPow(R.mknum("23524"), R.mknum("152"), R.mknum("1234")), "452");
+  assert.teststr(R.modPow(R.mknum("23524235242"), R.mknum("11273851274932754"), R.mknum("123428357274328")), "100174934273296");
 });
 
 QUnit.test('gcd', function (assert){
