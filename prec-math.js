@@ -413,6 +413,28 @@
     if (udfp(p))p = prec();
     return rnd(divIntTrn(a, b, p+1), p);
   }
+  
+  // long division of positive (non-zero) integers a and b
+  function qarInt(a, b){
+    var quot = "";
+    var curr = "";
+    var k, i;
+    var arr = ["", b, addInt(b, b)];
+    var alen = a.length;
+    for (i = 0; i < alen; i++){
+      if (curr !== "" || a[i] !== '0')curr += a[i];
+      if (geInt(curr, b)){
+        for (k = 2; geInt(curr, arr[k]); k++){
+          if (k+1 == arr.length)arr[k+1] = addInt(arr[k], b);
+        }
+        quot += k-1;
+        curr = subInt(curr, arr[k-1]); // might return ""
+      } else {
+        if (quot != "")quot += "0";
+      }
+    }
+    return [quot, curr];
+  }
 
   //// Predicates ////
 
@@ -436,7 +458,7 @@
     return !intp(a);
   }
 
-  function evnp(a){
+  function evenp(a){
     if (a.exp < 0)return false;
     if (a.exp > 0)return true;
     return inp(las(a.dat), '0', '2', '4', '6', '8');
@@ -532,6 +554,7 @@
     return arr;
   }*/
 
+  // equals floor(log(a))+1
   function siz(a){
     if (zerop(a))return -inf;
     return len(a.dat)+a.exp;
@@ -1776,11 +1799,70 @@
     return gcd2(b, mod(a, b));
   }
   
+  function gcd2cert(a, b){
+    var nega = negb = false;
+    var a2 = a, b2 = b;
+    if (negp(a)){
+      nega = true;
+      a2 = neg(a);
+    }
+    if (negp(b)){
+      negb = true;
+      b2 = neg(b);
+    }
+    // at each step, a*x0 + b*y0 = r0, and a*x1 + b*y1 = r1
+    var x0 = one();
+    var y0 = zero();
+    var r0 = a2;
+    //$.out("x: $1 y: $2 r: $3", x0, y0, r0);
+    var x1 = zero();
+    var y1 = one();
+    var r1 = b2;
+    //$.out("x: $1 y: $2 r: $3", x1, y1, r1);
+    var xn, yn, rn, qr, quot;
+    while (!is(r1, zero())){
+      qr = qar(r0, r1);
+      quot = qr[0];
+      rn = qr[1];
+      xn = sub(x0, mul(quot, x1));
+      yn = sub(y0, mul(quot, y1));
+      //$.out("x: $1 y: $2 r: $3", xn, yn, rn);
+      x0 = x1; x1 = xn;
+      y0 = y1; y1 = yn;
+      r0 = r1; r1 = rn;
+    }
+    x0 = nega?neg(x0):x0;
+    y0 = negb?neg(y0):y0;
+    if (!is(add(mul(a, x0), mul(b, y0)), r0)){
+      err(gcd2cert, "Certificate wrong!! a: $1, b: $2, x: $3 y: $4 r: $5", a, b, x0, y0, r0);
+    }
+    return [x0, y0, r0];
+  }
+  
+  // solve ax = c (mod m)
+  // returns [c', m'] where x = c' (mod m')
+  // if no solution, returns null
+  function fullSolveLinCon(a, c, m){
+    var ldeSol = gcd2cert(a, m);
+    var qr = qar(c, ldeSol[2]);
+    if (!zerop(qr[1]))return null;
+    var m2 = div(m, ldeSol[2]);
+    var c2 = mod(mul(qr[0], ldeSol[0]), m2);
+    return [c2, m2];
+  }
+  
+  // if sol doesn't exist, returns -1
+  function solveLinCon(a, c, m){
+    var full = fullSolveLinCon(a, c, m);
+    if (full === null)return neg(one());
+    return full[0];
+  }
+  
   function npi(a){
     return divTrn(a, pi(declen(a)+3+siz(a)), 0);
   }
   
-  //// Binary ////
+  //// Manipulation functions ////
   
   // a is an integer
   // returns an array of js num 0 and 1
@@ -1796,6 +1878,48 @@
       a = quot;
     }
     return r;
+  }
+  
+  // returns [r, d] such that a = 2^r*d
+  function factorTwos(a){
+    var r = 0;
+    while (evenp(a)){
+      a = mul(a, half());
+      r++;
+    }
+    return [r, a];
+  }
+  
+  //// Number properties ////
+  
+  function isCoprime(a, b){
+    return is(gcd(a, b), one());
+  }
+  
+  // n, a are integers, gcd(n, a) = 1
+  // https://en.wikipedia.org/wiki/Fermat_pseudoprime
+  function isFermatPseudoprime(n, a){
+    return is(modPow(a, sub(n, one()), n), one());
+  }
+  
+  // n, a are integers, gcd(n, a) = 1
+  // also isStrongPseudoprime
+  // https://en.wikipedia.org/wiki/Strong_pseudoprime
+  function isMillerRabinPseudoprime(n, a){
+    if (is(n, two()))return true;
+    if (evenp(n))return false;
+    var nmin1 = sub(n, one());
+    var d = nmin1;
+    while (evenp(d)){
+      d = mul(d, half());
+      if (is(modPow(a, d, n), nmin1)){
+        return true;
+      }
+    }
+    if (is(modPow(a, d, n), one())){
+      return true;
+    }
+    return false;
   }
   
   //// Random ////
@@ -1861,7 +1985,7 @@
     negp: negp,
     intp: intp,
     decp: decp,
-    evnp: evnp,
+    evenp: evenp,
     oddp: oddp,
     div5p: div5p,
     
@@ -1986,9 +2110,17 @@
     mod: mod,
     modPow: modPow,
     gcd: gcd,
+    gcd2cert: gcd2cert,
+    fullSolveLinCon: fullSolveLinCon,
+    solveLinCon: solveLinCon,
     npi: npi,
     
     real2bin: real2bin,
+    factorTwos: factorTwos,
+    
+    isCoprime: isCoprime,
+    isFermatPseudoprime: isFermatPseudoprime,
+    isMillerRabinPseudoprime: isMillerRabinPseudoprime,
     
     randPowTen: randPowTen,
     randUpTo: randUpTo,

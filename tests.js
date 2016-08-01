@@ -665,6 +665,62 @@ QUnit.test('gcd', function (assert){
   assert.teststr(R.gcd(R.mknum("744"), R.mknum("264")), "24");
 });
 
+QUnit.assert.testarr3 = function (a, a1, a2, a3){
+  this.teststr(a[0], a1);
+  this.teststr(a[1], a2);
+  this.teststr(a[2], a3);
+};
+
+QUnit.test('gcd2cert', function (assert){
+  assert.testarr3(R.gcd2cert(R.mknum("1"), R.mknum("1")), "0", "1", "1");
+  
+  assert.testarr3(R.gcd2cert(R.mknum("1"), R.mknum("0")), "1", "0", "1");
+  assert.testarr3(R.gcd2cert(R.mknum("0"), R.mknum("1")), "0", "1", "1");
+  assert.testarr3(R.gcd2cert(R.mknum("-1"), R.mknum("0")), "-1", "0", "1");
+  assert.testarr3(R.gcd2cert(R.mknum("0"), R.mknum("-1")), "0", "-1", "1");
+  
+  assert.testarr3(R.gcd2cert(R.mknum("54"), R.mknum("24")), "1", "-2", "6");
+  assert.testarr3(R.gcd2cert(R.mknum("-54"), R.mknum("24")), "-1", "-2", "6");
+  assert.testarr3(R.gcd2cert(R.mknum("54"), R.mknum("-24")), "1", "2", "6");
+  assert.testarr3(R.gcd2cert(R.mknum("-54"), R.mknum("-24")), "-1", "2", "6");
+  
+  assert.testarr3(R.gcd2cert(R.mknum("5.4"), R.mknum("2.4")), "1", "-2", "0.6");
+  assert.testarr3(R.gcd2cert(R.mknum("54"), R.mknum("2.4")), "1", "-22", "1.2");
+  assert.testarr3(R.gcd2cert(R.mknum("5.4"), R.mknum("24")), "9", "-2", "0.6");
+  
+  assert.testarr3(R.gcd2cert(R.mknum("7"), R.mknum("3")), "1", "-2", "1");
+  assert.testarr3(R.gcd2cert(R.mknum("20"), R.mknum("15")), "1", "-1", "5");
+  assert.testarr3(R.gcd2cert(R.mknum("432"), R.mknum("76")), "3", "-17", "4");
+  assert.testarr3(R.gcd2cert(R.mknum("744"), R.mknum("264")), "5", "-14", "24");
+});
+
+QUnit.test('fullSolveLinCon', function (assert){
+  assert.testarr(R.fullSolveLinCon(R.mknum("5"), R.mknum("2"), R.mknum("7")), "6", "7");
+  assert.testarr(R.fullSolveLinCon(R.mknum("1"), R.mknum("2"), R.mknum("7")), "2", "7");
+  assert.same(R.fullSolveLinCon(R.mknum("3"), R.mknum("2"), R.mknum("6")), null);
+  assert.testarr(R.fullSolveLinCon(R.mknum("3"), R.mknum("2"), R.mknum("7")), "3", "7");
+  
+  assert.testarr(R.fullSolveLinCon(R.mknum("-4"), R.mknum("2"), R.mknum("7")), "3", "7");
+  assert.testarr(R.fullSolveLinCon(R.mknum("3"), R.mknum("9"), R.mknum("7")), "3", "7");
+  assert.testarr(R.fullSolveLinCon(R.mknum("-4"), R.mknum("9"), R.mknum("7")), "3", "7");
+  
+  // class examples
+  assert.testarr(R.fullSolveLinCon(R.mknum("2"), R.mknum("3"), R.mknum("5")), "4", "5");
+  assert.testarr(R.fullSolveLinCon(R.mknum("884"), R.mknum("130"), R.mknum("273")), "2", "21");
+  assert.testarr(R.fullSolveLinCon(R.mknum("5"), R.mknum("39"), R.mknum("168")), "75", "168");
+  assert.testarr(R.fullSolveLinCon(R.mknum("20"), R.mknum("11"), R.mknum("27")), "10", "27");
+  assert.testarr(R.fullSolveLinCon(R.mknum("99"), R.mknum("45"), R.mknum("120")), "15", "40");
+  assert.testarr(R.fullSolveLinCon(R.mknum("2016"), R.mknum("3360"), R.mknum("4242")), "69", "101");
+  assert.same(R.fullSolveLinCon(R.mknum("2016"), R.mknum("2424"), R.mknum("4242")), null);
+  assert.testarr(R.fullSolveLinCon(R.mknum("79"), R.mknum("22"), R.mknum("161")), "39", "161");
+});
+
+QUnit.test('solveLinCon', function (assert){
+  assert.teststr(R.solveLinCon(R.mknum("5"), R.mknum("2"), R.mknum("7")), "6");
+  assert.teststr(R.solveLinCon(R.mknum("1"), R.mknum("2"), R.mknum("7")), "2");
+  assert.teststr(R.solveLinCon(R.mknum("3"), R.mknum("2"), R.mknum("6")), "-1");
+});
+
 QUnit.test('real2bin', function (assert){
   assert.same(R.real2bin(R.mknum("0")), [], $.iso);
   assert.same(R.real2bin(R.mknum("1")), [1], $.iso);
@@ -677,13 +733,102 @@ QUnit.test('real2bin', function (assert){
   assert.same(R.real2bin(R.mknum("8")), [0, 0, 0, 1], $.iso);
 });
 
+QUnit.assert.testFactorTwos = function (a, r, d){
+  var ret = R.factorTwos(a);
+  this.same(ret[0], r, "factorTwos(" + R.tostr(a) + ")[0] = " + r);
+  this.teststr(ret[1], d, "factorTwos(" + R.tostr(a) + ")[1] = " + d);
+};
+
+QUnit.test('factorTwos', function (assert){
+  assert.testFactorTwos(R.mknum("0"), 0, "0");
+  assert.testFactorTwos(R.mknum("1"), 0, "1");
+  assert.testFactorTwos(R.mknum("2"), 1, "1");
+  assert.testFactorTwos(R.mknum("3"), 0, "3");
+  assert.testFactorTwos(R.mknum("4"), 2, "1");
+  assert.testFactorTwos(R.mknum("5"), 0, "5");
+  assert.testFactorTwos(R.mknum("6"), 1, "3");
+  assert.testFactorTwos(R.mknum("7"), 0, "7");
+  assert.testFactorTwos(R.mknum("8"), 3, "1");
+  assert.testFactorTwos(R.mknum("9"), 0, "9");
+  assert.testFactorTwos(R.mknum("10"), 1, "5");
+  assert.testFactorTwos(R.mknum("12"), 2, "3");
+  assert.testFactorTwos(R.mknum("-1"), 0, "-1");
+  assert.testFactorTwos(R.mknum("-2"), 1, "-1");
+  assert.testFactorTwos(R.mknum("-4"), 2, "-1");
+  assert.testFactorTwos(R.mknum("-3"), 0, "-3");
+  assert.testFactorTwos(R.mknum("-6"), 1, "-3");
+});
+
+QUnit.test('isCoprime', function (assert){
+  assert.true(R.isCoprime(R.mknum("2"), R.mknum("3")));
+  assert.true(R.isCoprime(R.mknum("25"), R.mknum("92")));
+  assert.false(R.isCoprime(R.mknum("12"), R.mknum("15")));
+  assert.true(R.isCoprime(R.mknum("0"), R.mknum("1")));
+  assert.false(R.isCoprime(R.mknum("-12"), R.mknum("15")));
+  assert.true(R.isCoprime(R.mknum("20"), R.mknum("21")));
+});
+
+QUnit.test('isFermatPseudoprime', function (assert){
+  var primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97];
+  var pseudoprimes = {
+    3: [91],
+    4: [15, 85, 91],
+    5: [4],
+    6: [35],
+    7: [6, 25],
+    8: [9, 21, 45, 63, 65],
+    9: [4, 8, 28, 52, 91],
+    10: [9, 33, 91, 99]
+  };
+  
+  for (var a = 2; a <= 10; a++){
+    for (var n = 2; n <= 100; n++){
+      if (R.isCoprime(R.real(n), R.real(a))){
+        var b = R.isFermatPseudoprime(R.real(n), R.real(a));
+        if ($.has(n, primes) || (pseudoprimes[a] !== undefined && $.has(n, pseudoprimes[a]))){
+          assert.true(b, "isFermatPseudoprime(" + n + ", " + a + ") = true");
+        } else {
+          assert.false(b, "isFermatPseudoprime(" + n + ", " + a + ") = false");
+        }
+      }
+    }
+  }
+});
+
+QUnit.test('isMillerRabinPseudoprime', function (assert){
+  var primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97];
+  var pseudoprimes = {
+    3: [],
+    4: [],
+    5: [],
+    6: [],
+    7: [25],
+    8: [9, 65],
+    9: [91],
+    10: [9, 91]
+  };
+  
+  for (var a = 2; a <= 10; a++){
+    for (var n = 2; n <= 100; n++){
+      if (R.isCoprime(R.real(n), R.real(a))){
+        var b = R.isMillerRabinPseudoprime(R.real(n), R.real(a));
+        if ($.has(n, primes) || (pseudoprimes[a] !== undefined && $.has(n, pseudoprimes[a]))){
+          assert.true(b, "isMillerRabinPseudoprime(" + n + ", " + a + ") = true");
+        } else {
+          assert.false(b, "isMillerRabinPseudoprime(" + n + ", " + a + ") = false");
+        }
+      }
+    }
+  }
+});
+
 QUnit.test('randPowTen', function (assert){
-  assert.testRandHash(100, 10000, 30, function (){return R.tonum(R.randPowTen(2));});
+  assert.testRandHash(100, 10000, 40, function (){return R.tonum(R.randPowTen(2));});
 });
 
 QUnit.test('randUpTo', function (assert){
-  assert.testRandHash(100, 10000, 30, function (){return R.tonum(R.randUpTo(R.mknum("99")));});
-  assert.testRandHash(64, 10000, 30, function (){return R.tonum(R.randUpTo(R.mknum("63")));});
+  assert.testRandHash(100, 10000, 40, function (){return R.tonum(R.randUpTo(R.mknum("99")));});
+  assert.testRandHash(64, 10000, 40, function (){return R.tonum(R.randUpTo(R.mknum("63")));});
 });
 
 QUnit.test("rand", function (assert){

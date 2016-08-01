@@ -69,7 +69,7 @@ posp(a)           is a >= 0  (a[0] != '-')
 negp(a)           is a < 0  (a[0] == '-')
 intp(a)           is a an integer  (a.indexOf(".") == -1)
 decp(a)           is a not an integer  (a.indexOf(".") != -1)
-evnp(a)           is a even
+evenp(a)           is a even
 oddp(a)           is a odd
 div5p(a)          is a divisible by 5
 
