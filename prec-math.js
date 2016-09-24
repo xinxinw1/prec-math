@@ -1973,6 +1973,7 @@
     setprec: setprec,
 
     gtInt: gtInt,
+    geInt: geInt,
     addInt: addInt,
     add1Int: add1Int,
     subInt: subInt,
@@ -2001,6 +2002,7 @@
     siz: siz,
     nsiz: nsiz,
     fig: fig,
+    declen: declen,
     chke: chke,
     byzero: byzero,
     diffbyzero: diffbyzero,
