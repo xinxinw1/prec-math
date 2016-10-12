@@ -1,40 +1,77 @@
 QUnit.test('Converters', function (assert){
-  assert.testnum(R.mknum("35.35"), false, "3535", -2);
-  assert.testnum(R.mknum("0.0001"), false, "1", -4);
-  assert.testnum(R.mknum("-0.0001"), true, "1", -4);
-  assert.testnum(R.mknum("0.000012"), false, "12", -6);
-  assert.testnum(R.mknum("-352534000"), true, "352534", 3);
-  assert.testnum(R.mknum(""), false, "", 0);
-  assert.testnum(R.mknum("0"), false, "", 0);
-  assert.testnum(R.mknum("10000"), false, "1", 4);
+  assert.true(R.zerop(R.zero()));
+  assert.false(R.zerop(R.one()));
   
-  assert.testnum(R.mknumnull("325"), false, "325", 0);
+  assert.iso(R.numToArr(123), [1, 2, 3]);
+  assert.iso(R.numToArr(-52310), [5, 2, 3, 1, 0]);
+  
+  assert.same(R.arrToNum([1, 2, 3]), 123);
+  assert.same(R.arrToNum([5, 2, 3, 1, 0]), 52310);
+  assert.same(R.arrToNum([]), 0);
+  assert.same(R.arrToNum([1]), 1);
+  
+  assert.same(R.arrSecToNum([1, 2, 3, 6, 5, 0, 2, 1, 5, 0, 2], 0, 3), 123);
+  assert.same(R.arrSecToNum([1, 2, 3, 6, 5, 0, 2, 1, 5, 0, 2], 3, 6), 650);
+  assert.same(R.arrSecToNum([1, 2, 3, 6, 5, 0, 2, 1, 5, 0, 2], 5, 8), 21);
+  
+  assert.iso(R.arrGetSec([1, 2, 3, 6, 5, 0, 2, 1, 5, 0, 2], 0, 3), [1, 2, 3]);
+  assert.iso(R.arrGetSec([1, 2, 3, 6, 5, 0, 2, 1, 5, 0, 2], 3, 6), [6, 5, 0]);
+  assert.iso(R.arrGetSec([1, 2, 3, 6, 5, 0, 2, 1, 5, 0, 2], 5, 8), [2, 1]);
+  assert.iso(R.arrGetSec([1, 0, 0, 0], 1, 4), []);
+  
+  assert.iso(R.strToArr("123"), [1, 2, 3]);
+  assert.iso(R.strToArr("-2343.2053"), [2, 3, 4, 3, 2, 0, 5, 3]);
+  assert.iso(R.strToArr("0"), [0]);
+  assert.iso(R.strToArr("-000"), [0, 0, 0]);
+  
+  assert.same(R.arrToStr([1, 2, 3]), "123");
+  assert.same(R.arrToStr([0, 1, 2, 0]), "0120");
+  assert.same(R.arrToStr([]), "");
+  
+  assert.teststr(R.num(true, [2, 5, 3, 4], 3), "-2534000");
+  assert.teststr(R.num(false, [1, 2, 3, 4, 3, 5], -3), "123.435");
+  assert.teststr(R.num(false, [1, 2, 3, 4, 3, 5], -10), "0.0000123435");
+  assert.teststr(R.num(true, [1, 2, 3, 4, 3, 5], -10), "-0.0000123435");
+  assert.teststr(R.num(false, [], 0), "0");
+  
+  assert.testnum(R.trimr(R.num(true, [0, 0, 1, 5, 0, 0], 1)),
+    true, [0, 0, 1, 5], 3);
+  assert.testnum(R.trimr(R.num(true, [0, 0], 1)),
+    false, [], 0);
+  assert.testnum(R.triml(R.num(true, [0, 0, 1, 5, 0, 0], 1)), 
+    true, [1, 5, 0, 0], 1);
+  
+  assert.testnum(R.mknum("35.35"), false, [3, 5, 3, 5], -2);
+  assert.testnum(R.mknum("0.0001"), false, [1], -4);
+  assert.testnum(R.mknum("-0.0001"), true, [1], -4);
+  assert.testnum(R.mknum("0.000012"), false, [1, 2], -6);
+  assert.testnum(R.mknum("-352534000"), true, [3, 5, 2, 5, 3, 4], 3);
+  assert.testnum(R.mknum(""), false, [], 0);
+  assert.testnum(R.mknum("0"), false, [], 0);
+  assert.testnum(R.mknum("10000"), false, [1], 4);
+  
+  assert.testnum(R.mknumnull("325"), false, [3, 2, 5], 0);
   assert.same(R.mknumnull(null), null);
   
-  assert.testnum(R.mknumint(1), false, "1", 0);
-  assert.testnum(R.mknumint(0), false, "", 0);
-  assert.testnum(R.mknumint(-1), true, "1", 0);
-  assert.testnum(R.mknumint(9007199254740991), false, "9007199254740991", 0);
+  assert.testnum(R.mknumint(1), false, [1], 0);
+  assert.testnum(R.mknumint(0), false, [], 0);
+  assert.testnum(R.mknumint(-1), true, [1], 0);
+  assert.testnum(R.mknumint(9007199254740991), false, [9,0,0,7,1,9,9,2,5,4,7,4,0,9,9,1], 0);
   
-  assert.teststr(R.num(true, "2534", 3), "-2534000");
-  assert.teststr(R.num(false, "123435", -3), "123.435");
-  assert.teststr(R.num(false, "123435", -10), "0.0000123435");
-  assert.teststr(R.num(true, "123435", -10), "-0.0000123435");
-  assert.teststr(R.num(false, "", 0), "0");
   
-  assert.testnum(R.real(23.53), false, "2353", -2);
-  assert.testnum(R.real(-23.53), true, "2353", -2);
-  assert.testnum(R.real(0.0001), false, "1", -4);
-  assert.testnum(R.real("35.35"), false, "3535", -2);
-  assert.testnum(R.real(R.num(false, "35", 2)), false, "35", 2);
-  assert.testnum(R.real("000.000340000"), false, "34", -5);
-  assert.testnum(R.real(0), false, "", 0);
-  assert.testnum(R.real("0"), false, "", 0);
-  assert.testnum(R.real(0), false, "", 0);
-  assert.testnum(R.real("-0"), false, "", 0);
-  assert.testnum(R.real("0000"), false, "", 0);
-  assert.testnum(R.real("0000.0000"), false, "", 0);
-  assert.testnum(R.real("-0000.0000"), false, "", 0);
+  assert.testnum(R.real(23.53), false, [2,3,5,3], -2);
+  assert.testnum(R.real(-23.53), true, [2,3,5,3], -2);
+  assert.testnum(R.real(0.0001), false, [1], -4);
+  assert.testnum(R.real("35.35"), false, [3,5,3,5], -2);
+  assert.testnum(R.real(R.num(false, [3,5], 2)), false, [3,5], 2);
+  assert.testnum(R.real("000.000340000"), false, [3,4], -5);
+  assert.testnum(R.real(0), false, [], 0);
+  assert.testnum(R.real("0"), false, [], 0);
+  assert.testnum(R.real(0), false, [], 0);
+  assert.testnum(R.real("-0"), false, [], 0);
+  assert.testnum(R.real("0000"), false, [], 0);
+  assert.testnum(R.real("0000.0000"), false, [], 0);
+  assert.testnum(R.real("-0000.0000"), false, [], 0);
   assert.same(R.real(), false);
   assert.same(R.real(""), false);
   assert.same(R.real(".2343"), false);
@@ -49,8 +86,8 @@ QUnit.test('Converters', function (assert){
   assert.same(R.realint("35.35"), false);
   assert.same(R.realint(253), 253);
   assert.same(R.realint("153"), 153);
-  assert.same(R.realint(R.num(false, "35", 2)), 3500);
-  assert.same(R.realint(R.num(false, "35", -2)), false);
+  assert.same(R.realint(R.num(false, [3,5], 2)), 3500);
+  assert.same(R.realint(R.num(false, [3,5], -2)), false);
   assert.same(R.realint(".2343"), false);
   assert.same(R.realint("aseewf"), false);
   assert.same(R.realint("3..3532"), false);
@@ -62,38 +99,129 @@ QUnit.test('Converters', function (assert){
   assert.same(R.realint("-0"), 0);
   assert.same(R.realint(), false);
   assert.same(R.realint(""), false);
-  assert.same(R.realint(R.num(false, "", 0)), 0);
+  assert.same(R.realint(R.num(false, [], 0)), 0);
 });
+
+QUnit.assert.testarr = function (a, a1, a2){
+  this.teststr(a[0], a1);
+  this.teststr(a[1], a2);
+};
 
 QUnit.test('Int functions', function (assert){
-  assert.same(R.gtInt("10", "10"), false);
-  assert.same(R.gtInt("11", "10"), true);
+  assert.iso(R.mergeBase([2, 53, 6, 40], 2), [2, 5, 3, 0, 6, 4, 0]);
+  assert.iso(R.mergeBase([2], 2), [2]);
+  assert.iso(R.mergeBase([12, 53, 6, 40], 2), [1, 2, 5, 3, 0, 6, 4, 0]);
+  assert.iso(R.mergeBase([1, 0, 2], 2), [1, 0, 0, 0, 2]);
+    
+  assert.same(R.gtInt([1,0], [1,0]), false);
+  assert.same(R.gtInt([1,1], [1,0]), true);
   
-  assert.same(R.addInt("5", "5"), "10");
-  assert.same(R.addInt("43", "25343"), "25386");
-  assert.same(R.addInt("25732842", "2"), "25732844");
+  assert.same(R.gtIntFrontAlign([1,0], [1,0]), false);
+  assert.same(R.gtIntFrontAlign([1,1], [1,0]), true);
+  assert.same(R.gtIntFrontAlign([2,3,6], [2,3,6,2]), false);
+  assert.same(R.gtIntFrontAlign([2,3,6,2], [2,3,6]), true);
   
-  assert.same(R.subInt("5", "5"), "");
+  assert.iso(R.addInt([5], [5]), [1,0]);
+  assert.iso(R.addInt([4,3], [2,5,3,4,3]), [2,5,3,8,6]);
+  assert.iso(R.addInt([2,5,7,3,2,8,4,2], [2]), [2,5,7,3,2,8,4,4]);
+  
+  assert.iso(R.addIntBase([2, 53, 6, 40], [4, 23, 5, 61], 100), [6, 76, 12, 1]);
+  
+  assert.iso(R.add1Int([1]), [2]);
+  assert.iso(R.add1Int([9]), [1, 0]);
+  assert.iso(R.add1Int([]), [1]);
+  assert.iso(R.add1Int([9, 9, 9]), [1, 0, 0, 0]);
+  assert.iso(R.add1Int([1, 9]), [2, 0]);
+  
+  assert.iso(R.subInt([5], [5]), []);
   assert.throws(function (){
-    R.subInt("43", "25343");
+    R.subInt([4,3], [2,5,3,4,3]);
   });
-  assert.same(R.subInt("25732842", "2"), "25732840");
-  assert.same(R.subInt("453", "403"), "50");
+  assert.iso(R.subInt([2,5,7,3,2,8,4,2], [2]), [2,5,7,3,2,8,4,0]);
+  assert.iso(R.subInt([4,5,3], [4,0,3]), [5,0]);
   
-  assert.testnum(R.divIntTrn("1", "3", 1), false, "3", -1);
-  assert.testnum(R.divIntTrn("2", "3", 3), false, "666", -3);
-  assert.teststr(R.divIntTrn("1257328472933423523", "63728579374218789798791", 105), "0.000019729428857189810126491053645823100254222352609472729567398606981182936643587722121762339434204341034");
-  assert.testnum(R.divIntTrn("1", "12348534"), false, "809812727", -16);
+  assert.iso(R.mulLongBase10([1, 2], [3, 4]), [4, 0, 8]);
+  assert.iso(R.mulLongBase10([1,5,2,5,2,6,3,2,1], [5,2,3]), [7,9,7,7,1,2,6,5,8,8,3]);
+  assert.iso(R.mulLongBase10(R.strToArr("152526321062632617230"), R.strToArr("523520362435253")),
+    R.strToArr("79850634883625191266731071807209190"));
+  assert.iso(R.mulLongBase10(R.strToArr("9999999"), R.strToArr("9999999")),
+    R.strToArr("99999980000001"));
+  assert.iso(R.mulLongBase10(R.strToArr("99999990000000"), R.strToArr("99999990000000")),
+    R.strToArr("9999998000000100000000000000"));
   
-  assert.testnum(R.divInt("1", "3", 1), false, "3", -1);
-  assert.testnum(R.divInt("2", "3", 3), false, "667", -3);
+  assert.iso(R.mulLongBase107([1, 2], [3, 4]), [4, 0, 8]);
+  assert.iso(R.mulLongBase107([1,5,2,5,2,6,3,2,1], [5,2,3]), [7,9,7,7,1,2,6,5,8,8,3]);
+  assert.iso(R.mulLongBase107(R.strToArr("152526321062632617230"), R.strToArr("523520362435253")),
+    R.strToArr("79850634883625191266731071807209190"));
+  assert.iso(R.mulLongBase107(R.strToArr("9999999"), R.strToArr("9999999")),
+    R.strToArr("99999980000001"));
+  assert.iso(R.mulLongBase107(R.strToArr("99999990000000"), R.strToArr("99999990000000")),
+    R.strToArr("9999998000000100000000000000"));
+  
+  assert.iso(R.mulKarat([1, 2], [3, 4]), [4, 0, 8]);
+  assert.iso(R.mulKarat([1,5,2,5,2,6,3,2,1], [5,2,3]), [7,9,7,7,1,2,6,5,8,8,3]);
+  assert.iso(R.mulKarat(R.strToArr("152526321062632617230"), R.strToArr("523520362435253")),
+    R.strToArr("79850634883625191266731071807209190"));
+  assert.iso(R.mulKarat(R.strToArr("9999999"), R.strToArr("9999999")),
+    R.strToArr("99999980000001"));
+  assert.iso(R.mulKarat(R.strToArr("99999990000000"), R.strToArr("99999990000000")),
+    R.strToArr("9999998000000100000000000000"));
+  assert.iso(R.mulKarat(R.strToArr("152526321062632617230"), R.strToArr("523520362435253")),
+    R.strToArr("79850634883625191266731071807209190"));
+  assert.iso(R.mulKarat(R.strToArr("152526321025353253"), R.strToArr("152526321025353253")),
+    R.strToArr("23264278605529117811587213437682009"));
+  
+  var b = [5];
+  var table = [[], b];
+  assert.same(R.numTimesInto([1,5], b, table), 3);
+  assert.same(R.numTimesInto([1,6], b, table), 3);
+  assert.same(R.numTimesInto([1,4], b, table), 2);
+  assert.same(R.numTimesInto([], b, table), 0);
+  assert.same(R.numTimesInto([1], b, table), 0);
+  assert.same(R.numTimesInto([5,0], b, table), 10);
+  
+  
+  assert.testnum(R.divIntTrn([1], [3], 1), false, [3], -1);
+  assert.testnum(R.divIntTrn([2], [3], 3), false, R.strToArr("666"), -3);
+  assert.testnum(R.divIntTrn(R.strToArr("1234567"), [3], -3), false, R.strToArr("411"), 3);
+  assert.teststr(R.divIntTrn(R.strToArr("1257328472933423523"), R.strToArr("63728579374218789798791"), 105), "0.000019729428857189810126491053645823100254222352609472729567398606981182936643587722121762339434204341034");
+  assert.testnum(R.divIntTrn(R.strToArr("1"), R.strToArr("12348534")), false, R.strToArr("809812727"), -16);
+  
+  assert.leveliso(R.qarInt([1], [2]), [[], [1]], 2);
+  assert.leveliso(R.qarInt([2], [2]), [[1], []], 2);
+  
+  /*assert.testnum(R.divInt([1], [3], 1), false, [3], -1);
+  assert.testnum(R.divInt([2], [3], 3), false, R.strToArr("667"), -3);
   assert.teststr(R.divInt("1257328472933423523", "63728579374218789798791", 105), "0.000019729428857189810126491053645823100254222352609472729567398606981182936643587722121762339434204341035");
-  assert.testnum(R.divInt("1", "12348534"), false, "809812728", -16);
+  assert.testnum(R.divInt("1", "12348534"), false, "809812728", -16);*/
 });
 
+QUnit.test('Predicates', function (assert){
+  assert.true(R.evenp(R.mknum("0")));
+  assert.false(R.evenp(R.mknum("1")));
+  assert.false(R.evenp(R.mknum("-1")));
+  assert.true(R.evenp(R.mknum("2")));
+  assert.true(R.evenp(R.mknum("40")));
+  assert.false(R.evenp(R.mknum("25")));
+  
+  assert.false(R.oddp(R.mknum("0")));
+  assert.true(R.oddp(R.mknum("1")));
+  assert.true(R.oddp(R.mknum("-1")));
+  assert.false(R.oddp(R.mknum("2")));
+  assert.false(R.oddp(R.mknum("40")));
+  assert.true(R.oddp(R.mknum("25")));
+  
+  assert.true(R.div5p(R.mknum("0")));
+  assert.false(R.div5p(R.mknum("1")));
+  assert.false(R.div5p(R.mknum("-1")));
+  assert.true(R.div5p(R.mknum("5")));
+  assert.true(R.div5p(R.mknum("40")));
+  assert.true(R.div5p(R.mknum("25")));
+  assert.true(R.div5p(R.mknum("-5")));
+});
+  
+
 QUnit.test('Processing functions', function (assert){
-  assert.testnum(R.trimr(R.num(true, "1500", 1)), true, "15", 3);
-  assert.testnum(R.triml(R.num(true, "001500", 1)), true, "1500", 1);
   
   assert.same(R.cntr("0", "0000"), 4);
   assert.same(R.cntr("0", "10000"), 4);
@@ -104,17 +232,17 @@ QUnit.test('Processing functions', function (assert){
   assert.same(R.cntl("0", ""), 0);
   assert.same(R.cntl("1", "0000"), 0);
   
-  assert.testnum(R.left(R.num(false, "15", 0), 3), false, "15", -3);
-  assert.testnum(R.left(R.num(false, "", 0), 3), false, "", 0);
-  assert.testnum(R.right(R.num(false, "15", 0), 3), false, "15", 3);
-  assert.testnum(R.right(R.num(false, "", 0), 3), false, "", 0);
+  assert.testnum(R.left(R.num(false, [1,5], 0), 3), false, [1,5], -3);
+  assert.testnum(R.left(R.num(false, [], 0), 3), false, [], 0);
+  assert.testnum(R.right(R.num(false, [1,5], 0), 3), false, [1,5], 3);
+  assert.testnum(R.right(R.num(false, [], 0), 3), false, [], 0);
   
-  assert.testnum(R.matexp(R.num(true, "23", 3), R.num(false, "1", 5))[0], true, "23", 3);
-  assert.testnum(R.matexp(R.num(true, "23", 3), R.num(false, "1", 5))[1], false, "100", 3);
-  assert.testnum(R.matexp(R.num(false, "", 0), R.num(false, "23", 3))[0], false, "", 0);
-  assert.testnum(R.matexp(R.num(false, "", 0), R.num(false, "23", 3))[1], false, "23000", 0);
-  assert.testnum(R.matexp(R.num(false, "", 0), R.num(false, "23", -3))[0], false, "", -3);
-  assert.testnum(R.matexp(R.num(false, "", 0), R.num(false, "23", -3))[1], false, "23", -3);
+  assert.testnum(R.matexp(R.num(true, [2,3], 3), R.num(false, [1], 5))[0], true, [2,3], 3);
+  assert.testnum(R.matexp(R.num(true, [2,3], 3), R.num(false, [1], 5))[1], false, [1,0,0], 3);
+  assert.testnum(R.matexp(R.num(false, [], 0), R.num(false, [2,3], 3))[0], false, [], 0);
+  assert.testnum(R.matexp(R.num(false, [], 0), R.num(false, [2,3], 3))[1], false, [2,3,0,0,0], 0);
+  assert.testnum(R.matexp(R.num(false, [], 0), R.num(false, [2,3], -3))[0], false, [], -3);
+  assert.testnum(R.matexp(R.num(false, [], 0), R.num(false, [2,3], -3))[1], false, [2,3], -3);
   
   assert.same(R.siz(R.mknum("2534235")), 7);
   assert.same(R.siz(R.mknum("-100000")), 6);
@@ -128,8 +256,8 @@ QUnit.test('Processing functions', function (assert){
   assert.same(R.fig(R.mknum("100000")), 1);
   assert.same(R.fig(R.mknum("0")), 0);
   
-  assert.testnum(R.chke(1928375932743297520384903285129038401328501), false, "19283759327432977", 26);
-  assert.testnum(R.chke(Infinity), false, "17976931348623157", 292);
+  assert.testnum(R.chke(1928375932743297520384903285129038401328501), false, R.strToArr("19283759327432977"), 26);
+  assert.testnum(R.chke(Infinity), false, R.strToArr("17976931348623157"), 292);
   
   assert.same(R.byzero(R.mknum("0.5")), false);
   assert.same(R.byzero(R.mknum("0.4999")), true);
@@ -139,56 +267,12 @@ QUnit.test('Processing functions', function (assert){
 });
 
 QUnit.test('Comparison functions', function (assert){
-  assert.same(R.gt(R.num(false, "3", 0), R.num(false, "4", 0)), false);
-  assert.same(R.gt(R.num(false, "3", 1), R.num(false, "4", 0)), true);
-  assert.same(R.gt(R.num(true, "3", 1), R.num(false, "4", 0)), false);
-});
-
-QUnit.test('add', function (assert){
-  assert.testnum(R.add(R.num(false, "243", -2), R.num(false, "54215342412523", -10)), false, "54239642412523", -10);
-  assert.testnum(R.add(R.num(false, "5", 0), R.num(false, "5", 0)), false, "1", 1);
-  assert.testnum(R.add(R.num(false, "95", 0), R.num(false, "5", 0)), false, "1", 2);
-  assert.testnum(R.add(R.num(false, "1", 2), R.num(false, "", 0)), false, "1", 2);
-  assert.testnum(R.add(R.num(false, "", 0), R.num(false, "", 0)), false, "", 0);
-});
-
-QUnit.test('sub', function (assert){
-  assert.testnum(R.sub(R.mknum("5"), R.mknum("5")), false, "", 0);
-  assert.testnum(R.sub(R.num(false, "155", 0), R.num(false, "135", 0)), false, "2", 1);
-  assert.same(R.sub(R.num(true, "155", 0), R.num(false, "135", 0)), R.add(R.num(true, "155", 0), R.num(true, "135", 0)), R.is);
-  assert.testnum(R.sub(R.num(false, "1", 2), R.num(false, "", 0)), false, "1", 2);
-  assert.testnum(R.sub(R.num(false, "", 0), R.num(false, "", 0)), false, "", 0);
-});
-
-QUnit.test('mul', function (assert){
-  assert.testnum(R.mul(R.mknum("15"), R.mknum("8")), false, "12", 1);
-  assert.testnum(R.mul(R.mknum("32"), R.mknum("3125")), false, "1", 5);
-  assert.teststr(R.mul(R.mknum("12573294723952903415"), R.mknum("23473284732827")), "295136527085097957155099210904205");
-  assert.teststr(R.mul(R.mknum("-12573294723952903415"), R.mknum("-23473284732827")), "295136527085097957155099210904205");
-  assert.teststr(R.mul(R.mknum("-12573294723952903415"), R.mknum("23473284732827")), "-295136527085097957155099210904205");
-  assert.teststr(R.mul(R.mknum("2.537242358"), R.mknum("0.85579458930390839467312886387790109891646794492738965362080377611907512859133850419906645083142487716718296"), 104), "2.17135828172909011391644411782342680830561037361898426353765141077566626804624092477023226310621551584352");
-});
-
-QUnit.test('div', function (assert){
-  assert.testnum(R.div(R.mknum("1"), R.mknum("3"), 3), false, "333", -3);
-  assert.testnum(R.div(R.mknum("2"), R.mknum("3"), 3), false, "667", -3);
-  assert.testnum(R.div(R.mknum("5"), R.mknum("-9"), 3), true, "556", -3);
-  assert.testnum(R.div(R.mknum("-1531"), R.mknum("2534"), 10), true, "6041831097", -10);
-  assert.testnum(R.div(R.mknum("234.1283579328472893749275329"), R.mknum("28915723894729375347297"), 30), false, "8096921896", -30);
-  assert.testnum(R.div(R.mknum("2.1"), R.mknum("23"), 10), false, "913043478", -10);
-  assert.testnum(R.div(R.mknum("1"), R.mknum("12348534")), false, "809812728", -16);
-  
-  assert.testnum(R.divTrn(R.mknum("1"), R.mknum("3"), 3), false, "333", -3);
-  assert.testnum(R.divTrn(R.mknum("2"), R.mknum("3"), 3), false, "666", -3);
-  assert.testnum(R.divTrn(R.mknum("5"), R.mknum("-9"), 3), true, "555", -3);
-  assert.testnum(R.divTrn(R.mknum("-1531"), R.mknum("2534"), 10), true, "6041831097", -10);
-  assert.testnum(R.divTrn(R.mknum("234.1283579328472893749275329"), R.mknum("28915723894729375347297"), 30), false, "8096921895", -30);
-  assert.testnum(R.divTrn(R.mknum("2.1"), R.mknum("23"), 10), false, "913043478", -10);
-  assert.testnum(R.divTrn(R.mknum("1"), R.mknum("12348534")), false, "809812727", -16);
-  
-  assert.testnum(R.div(R.mknum("1"), R.mknum("1267650600228229401496703205376"), Infinity), false, "7888609052210118054117285652827862296732064351090230047702789306640625", -100);
-  assert.testnum(R.div(R.mknum("1"), R.mknum("10715086071862673209484250490600018105614048117055336074437503883703510511249361224931983788156958581275946729175531468251871452856923140435984577574698574803934567774824230985421074605062371141877954182153046474983581941267398767559165543946077062914571196477686542167660429831652624386837205668069376"), Infinity), false, "933263618503218878990089544723817169617091446371708024621714339795966910975775634454440327097881102359594989930324242624215487521354032394841520817203930756234410666138325150273995075985901831511100490796265113118240512514795933790805178271125415103810698378854426481119469814228660959222017662910442798456169448887147466528006328368452647429261829862165202793195289493607117850663668741065439805530718136320599844826041954101213229629869502194514609904214608668361244792952034826864617657926916047420065936389041737895822118365078045556628444273925387517127854796781556346403714877681766899855392069265439424008711973674701749862626690747296762535803929376233833981046927874558605253696441650390625", -1000);
-  assert.testnum(R.divInf(R.one(), R.mknum("8")), false, "125", -3);
+  assert.same(R.gt(R.mknum("1"), R.mknum("4")), false);
+  assert.same(R.gt(R.mknum("30"), R.mknum("4")), true);
+  assert.same(R.gt(R.mknum("30"), R.mknum("40")), false);
+  assert.same(R.gt(R.mknum("-1"), R.mknum("4")), false);
+  assert.same(R.gt(R.mknum("-1"), R.mknum("-2")), true);
+  assert.same(R.gt(R.mknum("-10"), R.mknum("10")), false);
 });
 
 QUnit.test('Rounding functions', function (assert){
@@ -241,6 +325,57 @@ QUnit.test('Rounding functions', function (assert){
   assert.teststr(R.dec(R.mknum("-0.09")), "-0.09");
   assert.teststr(R.dec(R.mknum("0.09")), "0.09");
 });
+
+QUnit.test('add', function (assert){
+  assert.teststr(R.add(R.mknum("2.43"), R.mknum("5421.5342412523")), "5423.9642412523");
+  assert.teststr(R.add(R.mknum("5"), R.mknum("5")), "10");
+  assert.teststr(R.add(R.mknum("95"), R.mknum("5")), "100");
+  assert.teststr(R.add(R.mknum("100"), R.mknum("0")), "100");
+  assert.teststr(R.add(R.mknum("0"), R.mknum("0")), "0");
+});
+
+QUnit.test('sub', function (assert){
+  assert.testnum(R.sub(R.mknum("5"), R.mknum("5")), false, [], 0);
+  assert.teststr(R.sub(R.mknum("155"), R.mknum("135")), "20");
+  assert.same(R.sub(R.mknum("-155"), R.mknum("155")), R.add(R.mknum("-155"), R.mknum("-155")), R.is);
+  assert.teststr(R.sub(R.mknum("100"), R.mknum("0")), "100");
+  assert.teststr(R.sub(R.mknum("0"), R.mknum("0")), "0");
+});
+
+QUnit.test('mul', function (assert){
+  assert.teststr(R.mul(R.mknum("15"), R.mknum("8")), "120");
+  assert.teststr(R.mul(R.mknum("32"), R.mknum("3125")), "100000");
+  assert.teststr(R.mul(R.mknum("12573294723952903415"), R.mknum("23473284732827")), "295136527085097957155099210904205");
+  assert.teststr(R.mul(R.mknum("-12573294723952903415"), R.mknum("-23473284732827")), "295136527085097957155099210904205");
+  assert.teststr(R.mul(R.mknum("-12573294723952903415"), R.mknum("23473284732827")), "-295136527085097957155099210904205");
+  assert.teststr(R.mul(R.mknum("2.537242358"), R.mknum("0.85579458930390839467312886387790109891646794492738965362080377611907512859133850419906645083142487716718296"), 104), "2.17135828172909011391644411782342680830561037361898426353765141077566626804624092477023226310621551584352");
+});
+
+QUnit.test('div', function (assert){
+  assert.testnum(R.div(R.mknum("1"), R.mknum("3"), 3), false, R.strToArr("333"), -3);
+  assert.testnum(R.div(R.mknum("2"), R.mknum("3"), 3), false, R.strToArr("667"), -3);
+  assert.testnum(R.div(R.mknum("5"), R.mknum("-9"), 3), true, R.strToArr("556"), -3);
+  assert.testnum(R.div(R.mknum("-1531"), R.mknum("2534"), 10),
+    true, R.strToArr("6041831097"), -10);
+  assert.testnum(R.div(R.mknum("234.1283579328472893749275329"), R.mknum("28915723894729375347297"), 30),
+    false, R.strToArr("8096921896"), -30);
+  assert.testnum(R.div(R.mknum("2.1"), R.mknum("23"), 10), false, R.strToArr("913043478"), -10);
+  assert.testnum(R.div(R.mknum("1"), R.mknum("12348534")), false, R.strToArr("809812728"), -16);
+  
+  assert.testnum(R.divTrn(R.mknum("1"), R.mknum("3"), 3), false, R.strToArr("333"), -3);
+  assert.testnum(R.divTrn(R.mknum("2"), R.mknum("3"), 3), false, R.strToArr("666"), -3);
+  assert.testnum(R.divTrn(R.mknum("5"), R.mknum("-9"), 3), true, R.strToArr("555"), -3);
+  assert.testnum(R.divTrn(R.mknum("-1531"), R.mknum("2534"), 10), true, R.strToArr("6041831097"), -10);
+  assert.testnum(R.divTrn(R.mknum("234.1283579328472893749275329"), R.mknum("28915723894729375347297"), 30), false, R.strToArr("8096921895"), -30);
+  assert.testnum(R.divTrn(R.mknum("2.1"), R.mknum("23"), 10), false, R.strToArr("913043478"), -10);
+  assert.testnum(R.divTrn(R.mknum("1"), R.mknum("12348534")), false, R.strToArr("809812727"), -16);
+  
+  assert.testnum(R.div(R.mknum("1"), R.mknum("1267650600228229401496703205376"), Infinity), false, R.strToArr("7888609052210118054117285652827862296732064351090230047702789306640625"), -100);
+  assert.testnum(R.div(R.mknum("1"), R.mknum("10715086071862673209484250490600018105614048117055336074437503883703510511249361224931983788156958581275946729175531468251871452856923140435984577574698574803934567774824230985421074605062371141877954182153046474983581941267398767559165543946077062914571196477686542167660429831652624386837205668069376"), Infinity), false, R.strToArr("933263618503218878990089544723817169617091446371708024621714339795966910975775634454440327097881102359594989930324242624215487521354032394841520817203930756234410666138325150273995075985901831511100490796265113118240512514795933790805178271125415103810698378854426481119469814228660959222017662910442798456169448887147466528006328368452647429261829862165202793195289493607117850663668741065439805530718136320599844826041954101213229629869502194514609904214608668361244792952034826864617657926916047420065936389041737895822118365078045556628444273925387517127854796781556346403714877681766899855392069265439424008711973674701749862626690747296762535803929376233833981046927874558605253696441650390625"), -1000);
+  assert.testnum(R.divInf(R.one(), R.mknum("8")), false, R.strToArr("125"), -3);
+});
+
+
 
 QUnit.test('exp', function (assert){
   assert.teststr(R.exp(R.mknum("0")), "1");
@@ -325,12 +460,12 @@ QUnit.test('ln constants', function (assert){
 });
 
 QUnit.test('ln', function (assert){
-  assert.testnum(R.lnReduce(R.mknum("0.00002534"))[0], false, "1267", -3);
-  assert.testnum(R.lnReduce(R.mknum("0.00002534"))[1], true, "4", 0);
-  assert.testnum(R.lnReduce(R.mknum("0.00002534"))[2], true, "5", 0);
-  assert.testnum(R.lnReduce(R.mknum("15342"))[0], false, "7671", -4);
-  assert.testnum(R.lnReduce(R.mknum("15342"))[1], false, "5", 0);
-  assert.testnum(R.lnReduce(R.mknum("15342"))[2], false, "4", 0);
+  assert.testnum(R.lnReduce(R.mknum("0.00002534"))[0], false, R.strToArr("1267"), -3);
+  assert.testnum(R.lnReduce(R.mknum("0.00002534"))[1], true, R.strToArr("4"), 0);
+  assert.testnum(R.lnReduce(R.mknum("0.00002534"))[2], true, R.strToArr("5"), 0);
+  assert.testnum(R.lnReduce(R.mknum("15342"))[0], false, R.strToArr("7671"), -4);
+  assert.testnum(R.lnReduce(R.mknum("15342"))[1], false, R.strToArr("5"), 0);
+  assert.testnum(R.lnReduce(R.mknum("15342"))[2], false, R.strToArr("4"), 0);
   
   assert.teststr(R.lnTaylor(R.mknum("0.1535"), 100), "-1.8740547119548852078727439182287769070330964155183114915353873998476180836431252458133343233036025138");
   assert.teststr(R.lnTaylor(R.mknum("0.92534"), 100), "-0.0775940414385536990214988528840119212271835869604118472786460077727807835150266587847523211055521824");
@@ -365,17 +500,17 @@ QUnit.test('frac', function (assert){
 });
 
 QUnit.test('sfrac', function (assert){
-  assert.testnum(R.sfracResume(function (n){if (n == 0)return R.one(); return null;}, 100).dat, false, "1", 0);
+  assert.teststr(R.sfracResume(function (n){if (n == 0)return R.one(); return null;}, 100).dat, "1");
   assert.same(R.sfracResume(function (n){if (n == 0)return R.one(); return null;}, 100).n, 0);
-  assert.testnum(R.sfracResume(function (n){if (n == 0)return R.one(); return null;}, 100).p0, false, "1", 0);
-  assert.testnum(R.sfracResume(function (n){if (n == 0)return R.one(); return null;}, 100).q0, false, "", 0);
-  assert.testnum(R.sfracResume(function (n){if (n == 0)return R.one(); return null;}, 100).p1, false, "1", 0);
-  assert.testnum(R.sfracResume(function (n){if (n == 0)return R.one(); return null;}, 100).q1, false, "1", 0);
+  assert.teststr(R.sfracResume(function (n){if (n == 0)return R.one(); return null;}, 100).p0, "1");
+  assert.teststr(R.sfracResume(function (n){if (n == 0)return R.one(); return null;}, 100).q0, "0");
+  assert.teststr(R.sfracResume(function (n){if (n == 0)return R.one(); return null;}, 100).p1, "1");
+  assert.teststr(R.sfracResume(function (n){if (n == 0)return R.one(); return null;}, 100).q1, "1");
   
   //if (slow){
     var o = R.sfracResume(function (n){return R.one();}, 1000);
-    assert.testnum(o.dat, false, "16180339887498948482045868343656381177203091798057628621354486227052604628189024497072072041893911374847540880753868917521266338622235369317931800607667263544333890865959395829056383226613199282902678806752087668925017116962070322210432162695486262963136144381497587012203408058879544547492461856953648644492410443207713449470495658467885098743394422125448770664780915884607499887124007652170575179788341662562494075890697040002812104276217711177780531531714101170466659914669798731761356006708748071013179523689427521948435305678300228785699782977834784587822891109762500302696156170025046433824377648610283831268330372429267526311653392473167111211588186385133162038400522216579128667529465490681131715993432359734949850904094762132229810172610705961164562990981629055520852479035240602017279974717534277759277862561943208275051312181562855122248093947123414517022373580577278616008688382952304592647878017889921990270776903895321968198615143780314997411069260886742962267575605231727775203536139362", -1000);
-    assert.testnum(R.sfracResume(function (n){return R.one();}, 2000, o).dat, false, "161803398874989484820458683436563811772030917980576286213544862270526046281890244970720720418939113748475408807538689175212663386222353693179318006076672635443338908659593958290563832266131992829026788067520876689250171169620703222104321626954862629631361443814975870122034080588795445474924618569536486444924104432077134494704956584678850987433944221254487706647809158846074998871240076521705751797883416625624940758906970400028121042762177111777805315317141011704666599146697987317613560067087480710131795236894275219484353056783002287856997829778347845878228911097625003026961561700250464338243776486102838312683303724292675263116533924731671112115881863851331620384005222165791286675294654906811317159934323597349498509040947621322298101726107059611645629909816290555208524790352406020172799747175342777592778625619432082750513121815628551222480939471234145170223735805772786160086883829523045926478780178899219902707769038953219681986151437803149974110692608867429622675756052317277752035361393621076738937645560606059216589466759551900400555908950229530942312482355212212415444006470340565734797663972394949946584578873039623090375033993856210242369025138680414577995698122445747178034173126453220416397232134044449487302315417676893752103068737880344170093954409627955898678723209512426893557309704509595684401755519881921802064052905518934947592600734852282101088194644544222318891319294689622002301443770269923007803085261180754519288770502109684249362713592518760777884665836150238913493333122310533923213624319263728910670503399282265263556209029798642472759772565508615487543574826471814145127000602389016207773224499435308899909501680328112194320481964387675863314798571911397815397807476150772211750826945863932045652098969855567814106968372884058746103378105444390943683583581381131168993855576975484149144534150912954070050194775486163075422641729394680367319805861833918328599130396072014455950449779212076124785645916160837059498786006970189409886400764436170933417270919143365013716", -2000);
+    assert.teststr(o.dat, "1.6180339887498948482045868343656381177203091798057628621354486227052604628189024497072072041893911374847540880753868917521266338622235369317931800607667263544333890865959395829056383226613199282902678806752087668925017116962070322210432162695486262963136144381497587012203408058879544547492461856953648644492410443207713449470495658467885098743394422125448770664780915884607499887124007652170575179788341662562494075890697040002812104276217711177780531531714101170466659914669798731761356006708748071013179523689427521948435305678300228785699782977834784587822891109762500302696156170025046433824377648610283831268330372429267526311653392473167111211588186385133162038400522216579128667529465490681131715993432359734949850904094762132229810172610705961164562990981629055520852479035240602017279974717534277759277862561943208275051312181562855122248093947123414517022373580577278616008688382952304592647878017889921990270776903895321968198615143780314997411069260886742962267575605231727775203536139362");
+    assert.teststr(R.sfracResume(function (n){return R.one();}, 2000, o).dat, "1.61803398874989484820458683436563811772030917980576286213544862270526046281890244970720720418939113748475408807538689175212663386222353693179318006076672635443338908659593958290563832266131992829026788067520876689250171169620703222104321626954862629631361443814975870122034080588795445474924618569536486444924104432077134494704956584678850987433944221254487706647809158846074998871240076521705751797883416625624940758906970400028121042762177111777805315317141011704666599146697987317613560067087480710131795236894275219484353056783002287856997829778347845878228911097625003026961561700250464338243776486102838312683303724292675263116533924731671112115881863851331620384005222165791286675294654906811317159934323597349498509040947621322298101726107059611645629909816290555208524790352406020172799747175342777592778625619432082750513121815628551222480939471234145170223735805772786160086883829523045926478780178899219902707769038953219681986151437803149974110692608867429622675756052317277752035361393621076738937645560606059216589466759551900400555908950229530942312482355212212415444006470340565734797663972394949946584578873039623090375033993856210242369025138680414577995698122445747178034173126453220416397232134044449487302315417676893752103068737880344170093954409627955898678723209512426893557309704509595684401755519881921802064052905518934947592600734852282101088194644544222318891319294689622002301443770269923007803085261180754519288770502109684249362713592518760777884665836150238913493333122310533923213624319263728910670503399282265263556209029798642472759772565508615487543574826471814145127000602389016207773224499435308899909501680328112194320481964387675863314798571911397815397807476150772211750826945863932045652098969855567814106968372884058746103378105444390943683583581381131168993855576975484149144534150912954070050194775486163075422641729394680367319805861833918328599130396072014455950449779212076124785645916160837059498786006970189409886400764436170933417270919143365013716");
   //}
 });
 
@@ -590,10 +725,7 @@ QUnit.test('agm', function (assert){
   assert.teststr(R.agm(R.mknum("2"), R.mknum("3"), 16), "2.4746804362363045");
 });
 
-QUnit.assert.testarr = function (a, a1, a2){
-  this.teststr(a[0], a1);
-  this.teststr(a[1], a2);
-};
+
 
 QUnit.test('qar', function (assert){
   assert.testarr(R.qar(R.mknum("1"), R.mknum("2")), "0", "1");
