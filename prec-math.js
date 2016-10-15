@@ -2,6 +2,8 @@
 
 /* require tools */
 
+//var list = [];
+//$.sli(list, 1900, 2000).map(function (a){return a.map(R.arrToStr).join(" ");}).join("\n")
 (function (udf){
   ////// Import //////
 
@@ -76,7 +78,7 @@
   //// Basic string functions ////
   
   // a is js int
-  function numToArr(a){
+  /*function numToArr(a){
     if (a < 0)a = -a;
     var arr = [];
     while (a != 0){
@@ -85,6 +87,17 @@
       a = (a-rem)/10;
     }
     return arr.reverse();
+  }*/
+  
+  function numToArr(a){
+    if (a < 0)a = -a;
+    if (a === 0)return [];
+    var arr = [];
+    a = str(a);
+    for (var i = 0; i < a.length; i++){
+      arr[i] = num(a[i]);
+    }
+    return arr;
   }
 
   // O(a.len)
@@ -118,6 +131,19 @@
     var arr = [];
     for (var i = 0; i < a.length; i++){
       if (a[i] !== '.' && a[i] !== '-')arr.push(Number(a[i]));
+    }
+    return arr;
+  }
+  
+  function intStrToArr(a){
+    var arr = [];
+    var start = true;
+    for (var i = 0; i < a.length; i++){
+      if (start){
+        if (a[i] === '0')continue;
+        start = false;
+      }
+      arr.push(num(a[i]));
     }
     return arr;
   }
@@ -217,6 +243,14 @@
     if (zeros !== 0)a.splice(0, zeros);
     return zeros;
   }
+  
+  /*function trimlStr(a){
+    if (a[0] !== '0')return a;
+    for (var i = 0; i < a.length; i++){
+      if (a[i] !== '0')return a.substring(a, i);
+    }
+    return "";
+  }*/
   
   function trimr(a){
     var n = trimrArr(a.dat);
@@ -319,7 +353,7 @@
   
   // digits is number of digits in each entry of a
   // O(a.len*digits) or O(res.len)
-  function mergeBase(a, digits){
+  function mergeBaseOld(a, digits){
     var res = [];
     var stack = [];
     for (var i = 0; i < a.length; i++){
@@ -331,6 +365,20 @@
       }
       while (stack.length != 0){
         res.push(stack.pop());
+      }
+    }
+    return res;
+  }
+  
+  function mergeBase(a, digits){
+    var res = [];
+    for (var i = 0; i < a.length; i++){
+      var entry = (a[i] === 0)?"":str(a[i]);
+      if (i !== 0 && entry.length < digits){
+        for (var k = digits-entry.length; k >= 1; k--)res.push(0);
+      }
+      for (var d = 0; d < entry.length; d++){
+        res.push(num(entry[d]));
       }
     }
     return res;
@@ -437,15 +485,13 @@
   // assume a >= b
   // O(a.len)
   
-  var zeroCases = [0];
-  function subInt(a, b){
+  function subIntOld(a, b){
     if (b.length > a.length)err(subInt, "Answer is negative for a = $1 and b = $2", a, b);
-    var res = [];
+    var res = "";
     var ai = a.length-1;
     var bi = b.length-1;
     var borrow = 0;
     var diff;
-    var allzeros = true;
     while (ai >= 0){
       diff = borrow;
       // a is greater, so will always have ai available
@@ -461,10 +507,38 @@
       } else {
         borrow = 0;
       }
-      if (diff !== 0)allzeros = false;
+      res = diff + res;
+    }
+    // res = trimlStr(res);  (covered by intStrToArr)
+    return intStrToArr(res);
+  }
+  
+  function subInt(a, b){
+    //list.push([a, b]);
+    if (b.length > a.length)err(subInt, "Answer is negative for a = $1 and b = $2", a, b);
+    if (a.length <= 14 && b.length <= 14)return numToArr(arrToNum(a)-arrToNum(b));
+    var res = [];
+    var ai = a.length-1;
+    var bi = b.length-1;
+    var borrow = 0;
+    var diff;
+    while (ai >= 0){
+      diff = borrow;
+      // a is greater, so will always have ai available
+      diff += a[ai];
+      ai--;
+      if (bi >= 0){
+        diff -= b[bi];
+        bi--;
+      }
+      if (diff < 0){
+        borrow = -1;
+        diff += 10;
+      } else {
+        borrow = 0;
+      }
       res.push(diff);
     }
-    if (allzeros)zeroCases[0]++;
     trimrArrNoCount(res);
     return res.reverse();
   }
@@ -531,8 +605,13 @@
     return sum;
   }
   
-  function mulLongBase107(a, b){
-    if (b.length > a.length)return mulLongBase107(b, a);
+  function mulLongBase1072(a, b){
+    if (b.length > a.length){
+      var c = a;
+      a = b;
+      b = c;
+    }
+    list.push([a, b]);
     //console.log("a", a, "b", b);
 
     var sum = [];
@@ -572,7 +651,7 @@
       res.reverse();
       //console.log("res", res);
       var numExtraZeros = (b.length-bi)/7;
-      rightInt(res, numExtraZeros);
+      if (numExtraZeros !== 0)rightInt(res, numExtraZeros);
       //console.log("res with zeros", res);
       if (sum.length === 0){
         sum = res;
@@ -583,6 +662,69 @@
     }
     sum = mergeBase(sum, 7);
     //console.log("after merge", sum);
+    return sum;
+  }
+  
+  function mulLongBase107(a, b){
+    if (b.length > a.length){
+      var c = a;
+      a = b;
+      b = c;
+    }
+    //list.push([a, b]);
+    //console.log("a", a, "b", b);
+
+    var sum = [];
+    for (var bi = b.length; bi > 0; bi -= 7){
+      var currb = arrSecToNum(b, Math.max(bi-7, 0), bi);
+      //console.log("currb", currb);
+      if (currb === 0)continue;
+      var res = "";
+      var carry = 0;
+      var prod, strprod, len;
+      for (var ai = a.length; ai > 0; ai -= 7){
+        var curra = arrSecToNum(a, Math.max(ai-7, 0), ai);
+        //console.log("curra", curra);
+        /*prod = currb*curra + carry;
+        //console.log("prod", prod);
+        if (prod >= 10000000){  // 10^7
+          var rem = prod % 10000000;
+          carry = (prod-rem)/10000000;
+          prod = rem;
+        } else {
+          carry = 0;
+        }*/
+        prod = currb*curra + carry;
+        strprod = str(prod);
+        len = strprod.length;
+        if (len > 7){
+          carry = num(strprod.substring(0, len-7));
+          prod = strprod.substring(len-7, len);
+        } else {
+          carry = 0;
+          prod = strprod;
+          if (ai > 7){ // if not on last set of a numbers
+            for (var h = 7-len; h >= 1; h--)prod = "0" + prod;
+          }
+        }
+        //console.log("carry", carry);
+        //console.log("finprod", prod);
+        res = prod + res; // 7 digit prod
+      }
+      if (carry !== 0)res = carry + res;
+      var numExtraZeros = (b.length-bi)/7;
+      if (numExtraZeros !== 0){
+        for (var k = numExtraZeros; k >= 1; k--)res += "0000000";
+      }
+      //console.log("res", res);
+      res = intStrToArr(res);
+      if (sum.length === 0){
+        sum = res;
+      } else {
+        sum = addInt(sum, res);
+      }
+      //console.log("new sum", sum);
+    }
     return sum;
   }
 
@@ -1382,7 +1524,7 @@
   
   // continued fraction
   // http://en.wikipedia.org/wiki/Generalized_continued_fraction
-  function sqrtCont(a, p){
+  /*function sqrtContSlow(a, p){
     var rt = isqrt(a);
     var diff = sub(a, mul(rt, rt));
     if (zerop(diff))return rt;
@@ -1398,6 +1540,14 @@
     }
     
     return frac(an, bn, p);
+  }*/
+  
+  function sqrtCont(a, p){
+    var rt = isqrt(a);
+    var diff = sub(a, mul(rt, rt));
+    if (zerop(diff))return rt;
+    var rt2 = mul(two(), rt);
+    return sub(cfrac(rt2, diff, p), rt);
   }
   
   /*
@@ -1897,20 +2047,7 @@
   
   // continued fraction
   function phiResume(p, o){
-    if (udfp(o))o = {f0: one(), f1: two()};
-    if (p == udf)p = prec();
-    
-    var f0 = o.f0;
-    var f1 = o.f1;
-    var fn;
-    while (true){
-      fn = add(f0, f1);
-      f0 = f1;
-      f1 = fn;
-      if (2*nsiz(fn)-2 >= p)break;
-    }
-    
-    return {dat: div(f1, f0, p), f0: f0, f1: f1};
+    return cfracResume(one(), one(), p, o);
   }
   
   var ln2 = hashp(ln2Machin);
@@ -1970,6 +2107,86 @@
     var sum = add(sub(add(p1, p2), p3), p4);
     
     return mul(sum, mknum("4"), p);
+  }
+  
+  //// Matrices ////
+  
+  // the matrix
+  // [ 1 2 3
+  //   4 5 6 ]
+  // is stored as
+  // [[1, 2, 3], [4, 5, 6]]
+  
+  function M(a){
+    return {type: "matrix", data: a};
+  }
+  
+  function mkmat(a){
+    var r = [];
+    for (var i = 0; i < a.length; i++){
+      r[i] = [];
+      for (var j = 0; j < a[i].length; j++){
+        r[i][j] = real(a[i][j]);
+      }
+    }
+    return r;
+  }
+  
+  function isMat(a, b){
+    if (a.length !== b.length)return false;
+    for (var i = 0; i < a.length; i++){
+      if (a[i].length !== b[i].length)return false;
+      for (var j = 0; j < a[i].length; j++){
+        if (!is(a[i][j], b[i][j]))return false;
+      }
+    }
+    return true;
+  }
+  
+  function idMat(n){
+    var a = [];
+    for (var i = 0; i < n; i++){
+      a[i] = [];
+      for (var j = 0; j < n; j++){
+        a[i][j] = (i === j)?one():zero();
+      }
+    }
+    return a;
+  }
+  
+  function mulMat(a, b){
+    var r = [];
+    for (var i = 0; i < a.length; i++){
+      r[i] = [];
+      for (var j = 0; j < b[0].length; j++){
+        r[i][j] = zero();
+        for (var k = 0; k < a[i].length; k++){
+          var curr = mul(a[i][k], b[k][j]);
+          if (zerop(r[i][j]))r[i][j] = curr;
+          else r[i][j] = add(r[i][j], curr);
+        }
+      }
+    }
+    return r;
+  }
+  
+  // n is js int
+  function powMat(a, n){
+    if (n === 0)return idMat(a.length);
+    if (n === 1)return a;
+    if (n % 2 === 0){
+      var r = powMat(a, n/2);
+      return mulMat(r, r);
+    } else {
+      var r = powMat(a, (n-1)/2);
+      return mulMat(mulMat(r, r), a);
+    }
+  }
+  
+  function tostrMat(a){
+    return "[" + a.map(function (row){
+      return row.map(tostr).join(" ");
+    }).join(" | ") + "]";
   }
   
   //// Special operation functions ////
@@ -2061,6 +2278,82 @@
       p1 = pn; q1 = qn;
     }
     return {n: n-1, p0: p0, q0: q0, p1: p1, q1: q1};
+  }
+  
+  // Let p0 = 1, p1 = a, q0 = 0, q1 = 1
+  //     p_n = a*p_{n-1} + b*p_{n-2},
+  //     q_n = a*q_{n-1} + b*q_{n-2}
+  // This is equivalent to
+  // [p_n p_{n-1} | q_n q_{n-1}] = [a 1 | 1 0]*[a 1 | b 0]^(n-1)
+  
+  // Theorem 1: [a 1 | b 0]^n = [p_n p_{n-1} | bq_n bq_{n-1}]
+  // Theorem 2: q_n = p_{n-1}
+  
+  // constant fraction
+  /*function cfrac(a, b, p){
+    if (p == udf)p = prec();
+    
+    var bis1 = is(b, one());
+    var mat = mkmat([[a, 1], [b, 0]]);
+    var prod = b;
+    // qn = p{n-1} = mat[0][1]
+    while (2*nsiz(mat[0][1])-siz(prod)-siz(b)-2 < p){
+      mat = mulMat(mat, mat);
+      if (!bis1)prod = mul(prod, prod);
+    }
+    
+    return div(mat[0][0], mat[0][1], p);
+  }*/
+  
+  function cfrac(a, b, p){
+    return cfracResume(a, b, p).dat;
+  }
+  
+  /*function cfracResume(a, b, p, o){
+    if (p == udf)p = prec();
+    if (o === udf)o = {mat: mkmat([[a, 1], [b, 0]]), prod: b};
+    
+    var bis1 = is(b, one());
+    var mat = o.mat;
+    var prod = o.prod;
+    // qn = p{n-1} = mat[0][1]
+    while (2*nsiz(mat[0][1])-siz(prod)-siz(b)-2 < p){
+      mat = mulMat(mat, mat);
+      if (!bis1)prod = mul(prod, prod);
+    }
+    
+    return {dat: div(mat[0][0], mat[0][1], p), mat: mat, prod: prod};
+  }*/
+  
+  // Theorem 3: p_{2n} = (p_n)^2 + b*(p_{n-1})^2
+  //            p_{2n-1} = p_{n-1}*(p_n+b*p_{n-2})
+  //            p_{2n-2} = (p_{n-1})^2 + b*(p_{n-2})^2
+  
+  function cfracResume(a, b, p, o){
+    if (p == udf)p = prec();
+    if (o === udf)o = {pn: a, pn1: one(), pn2: zero(), prod: b};
+    
+    var bis1 = is(b, one());
+    var pn = o.pn;
+    var pn1 = o.pn1;
+    var pn2 = o.pn2;
+    var prod = o.prod;
+    var p2n, p2n1, p2n2;
+    var pn1sq, bpn2;
+    // qn = pn1
+    while (2*nsiz(pn1)-siz(prod)-siz(b)-2 < p){
+      pn1sq = mul(pn1, pn1);
+      bpn2 = mul(b, pn2);
+      p2n = add(mul(pn, pn), mul(b, pn1sq));
+      p2n1 = mul(pn1, add(pn, bpn2));
+      p2n2 = add(pn1sq, mul(pn2, bpn2));
+      if (!bis1)prod = mul(prod, prod);
+      pn = p2n;
+      pn1 = p2n1;
+      pn2 = p2n2;
+    }
+    
+    return {dat: div(pn, pn1, p), pn: pn, pn1, pn1, pn2: pn2, prod: prod};
   }
   
   // Euclidean definition
@@ -2300,13 +2593,13 @@
     setprec: setprec,
     
     mergeBase: mergeBase,
+    mergeBaseOld: mergeBaseOld,
 
     gtInt: gtInt,
     gtIntFrontAlign: gtIntFrontAlign,
     addInt: addInt,
     addIntBase: addIntBase,
     add1Int: add1Int,
-    zeroCases: zeroCases,
     subInt: subInt,
     mulInt: mulInt,
     mulLongBase10: mulLongBase10,
@@ -2437,10 +2730,18 @@
     ln10: ln10,
     pi: pi,
     
+    mkmat: mkmat,
+    isMat: isMat,
+    idMat: idMat,
+    mulMat: mulMat,
+    powMat: powMat,
+    tostrMat: tostrMat,
+    
     frac: frac,
     fracResume: fracResume,
     sfrac: sfrac,
     sfracResume: sfracResume,
+    cfrac: cfrac,
     qar: qar,
     quo: quo,
     rem: mod,
