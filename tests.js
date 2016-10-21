@@ -262,6 +262,194 @@ QUnit.test('Processing functions', function (assert){
   assert.same(R.byzero(R.mknum("2.32232"), 3), false);
 });
 
+QUnit.test('hash', function (assert){
+  var num = R.mknum("18.238571293471295128461283561283461295719273412907352371");
+  function a(p){
+    return R.rnd(num, p);
+  }
+  var h = {};
+  assert.teststr(R.hashp(a, 2, h), "18.24");
+  assert.same(h.p, 2);
+  assert.teststr(h.dat, "18.24");
+  assert.teststr(R.hashp(a, 5, h), "18.23857");
+  assert.same(h.p, 5);
+  assert.teststr(h.dat, "18.23857");
+  assert.teststr(R.hashp(a, 4, h), "18.2386");
+  assert.same(h.p, 6);
+  assert.teststr(h.dat, "18.238571");
+  assert.teststr(R.hashp(a, 4, h), "18.2386");
+  assert.same(h.p, 6);
+  assert.teststr(h.dat, "18.238571");
+  
+  function bResume(p, o){
+    if ($.udfp(o))o = {dat: R.mknum("0.4"), last: R.mknum("0.4")};
+    while (R.declen(o.dat) < p){
+      o.last = R.left(o.last, 1);
+      o.dat = R.add(o.dat, o.last);
+    }
+    return o;
+  }
+  var mem = {};
+  assert.teststr(R.hashr(bResume, 2, mem), "0.44");
+  assert.same(mem.h.p, 2);
+  assert.teststr(mem.h.dat, "0.44");
+  assert.teststr(mem.o.dat, "0.44");
+  assert.teststr(mem.o.last, "0.04");
+  assert.teststr(R.hashr(bResume, 5, mem), "0.44444");
+  assert.same(mem.h.p, 5);
+  assert.teststr(mem.h.dat, "0.44444");
+  assert.teststr(mem.o.dat, "0.44444");
+  assert.teststr(mem.o.last, "0.00004");
+  assert.teststr(R.hashr(bResume, 2, mem), "0.44");
+  assert.same(mem.h.p, 5);
+  assert.teststr(mem.h.dat, "0.44444");
+  assert.teststr(mem.o.dat, "0.44444");
+  assert.teststr(mem.o.last, "0.00004");
+  
+  function mkcResume(a){
+    var start = R.left(a, 1);
+    return function (p, o){
+      if ($.udfp(o))o = {dat: start, last: start};
+      while (R.declen(o.dat) < p){
+        o.last = R.left(o.last, 1);
+        o.dat = R.add(o.dat, o.last);
+      }
+      return o;
+    };
+  }
+  var mem = {};
+  assert.teststr(R.hasha(mkcResume, R.mknum("1"), 2, mem), "0.11");
+  assert.teststr(R.hasha(mkcResume, R.mknum("2"), 2, mem), "0.22");
+  assert.teststr(R.hasha(mkcResume, R.mknum("1"), 5, mem), "0.11111");
+  assert.teststr(R.hasha(mkcResume, R.mknum("1"), 2, mem), "0.11");
+  assert.teststr(R.hasha(mkcResume, R.mknum("2"), 5, mem), "0.22222");
+  assert.teststr(R.hasha(mkcResume, R.mknum("2"), 4, mem), "0.2222");
+  
+  
+  
+  mem = {
+    type: "hashp",
+    p: 3,
+    dat: R.mknum("2.435")
+  };
+  assert.true(R.mergehashp(mem, {
+    type: "hashp",
+    p: 5,
+    dat: R.mknum("2.43523")
+  }));
+  assert.same(mem.p, 5);
+  assert.teststr(mem.dat, "2.43523");
+  
+  assert.false(R.mergehashp(mem, {
+    type: "hashp",
+    p: 4,
+    dat: R.mknum("2.4352")
+  }));
+  assert.same(mem.p, 5);
+  assert.teststr(mem.dat, "2.43523");
+  
+  
+  
+  mem = {
+    type: "hashr",
+    o: {what: "yo"},
+    h: {
+      p: 3,
+      dat: R.mknum("2.435")
+    }
+  };
+  assert.true(R.mergehashr(mem, {
+    type: "hashr",
+    o: {what: "whoa"},
+    h: {
+      p: 5,
+      dat: R.mknum("2.43523")
+    }
+  }));
+  assert.same(mem.o.what, "whoa");
+  assert.same(mem.h.p, 5);
+  assert.teststr(mem.h.dat, "2.43523");
+  
+  assert.false(R.mergehashr(mem, {
+    type: "hashr",
+    o: {what: "yay"},
+    h: {
+      p: 2,
+      dat: R.mknum("2.44")
+    }
+  }));
+  assert.same(mem.o.what, "whoa");
+  assert.same(mem.h.p, 5);
+  assert.teststr(mem.h.dat, "2.43523");
+  
+  
+  mem = {
+    type: "hasha",
+    "1|2|3": {
+      o: {what: "yo"},
+      h: {
+        p: 3,
+        dat: R.mknum("2.435")
+      }
+    }
+  };
+  assert.true(R.mergehasha(mem, {
+    type: "hasha",
+    "1|2|3": {
+      o: {what: "whoa"},
+      h: {
+        p: 5,
+        dat: R.mknum("2.43523")
+      }
+    }
+  }));
+  assert.same(mem["1|2|3"].o.what, "whoa");
+  assert.same(mem["1|2|3"].h.p, 5);
+  assert.teststr(mem["1|2|3"].h.dat, "2.43523");
+  
+  assert.true(R.mergehasha(mem, {
+    type: "hasha",
+    "1|2|3": {
+      o: {what: "whoa"},
+      h: {
+        p: 2,
+        dat: R.mknum("2.43")
+      }
+    },
+    "2|3|4": {
+      o: {what: "whoa"},
+      h: {
+        p: 5,
+        dat: R.mknum("2.43523")
+      }
+    }
+  }));
+  assert.same(mem["1|2|3"].o.what, "whoa");
+  assert.same(mem["1|2|3"].h.p, 5);
+  assert.teststr(mem["1|2|3"].h.dat, "2.43523");
+  assert.same(mem["2|3|4"].o.what, "whoa");
+  assert.same(mem["2|3|4"].h.p, 5);
+  assert.teststr(mem["2|3|4"].h.dat, "2.43523");
+  
+  assert.false(R.mergehasha(mem, {
+    type: "hasha",
+    "1|2|3": {
+      o: {what: "whoa"},
+      h: {
+        p: 2,
+        dat: R.mknum("2.43")
+      }
+    }
+  }));
+  assert.same(mem["1|2|3"].o.what, "whoa");
+  assert.same(mem["1|2|3"].h.p, 5);
+  assert.teststr(mem["1|2|3"].h.dat, "2.43523");
+  assert.same(mem["2|3|4"].o.what, "whoa");
+  assert.same(mem["2|3|4"].h.p, 5);
+  assert.teststr(mem["2|3|4"].h.dat, "2.43523");
+  
+});
+
 QUnit.test('Comparison functions', function (assert){
   assert.same(R.gt(R.mknum("1"), R.mknum("4")), false);
   assert.same(R.gt(R.mknum("30"), R.mknum("4")), true);

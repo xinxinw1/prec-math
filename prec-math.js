@@ -1058,48 +1058,136 @@
     return byzero(sub(a, b), p);
   }
   
-  // memoize f(p) using rnd
-  function hashp(f){
-    var h = {p: -inf, dat: zero()};
+  // hash prec
+  // return f(p), and store data in h
+  // h should be a {}
+  function hashp(f, p, h){
+    if (udfp(h.p) || udfp(h.dat)){
+      h.p = -inf;
+      h.dat = zero();
+    }
     
-    return worig(f, function (p){
-      if (p == udf)p = prec();
-      if (p <= h.p)return rnd(h.dat, p);
-      h.p = p;
-      h.dat = f(p);
-      return h.dat;
-    });
+    if (p === udf)p = prec();
+    if (p === h.p)return h.dat;
+    // if requested precision is 1 less than known, must calculate more digits to avoid
+    //   rounding error
+    if (p === h.p-1)return rnd(hashp(f, p+2, h), p);
+    if (p <= h.p-2)return rnd(h.dat, p);
+    h.p = p;
+    h.dat = f(p);
+    return h.dat;
   }
   
+  // return true if merge needed, false otherwise
+  function mergehashp(h, newh){
+    if (newh.p > h.p){
+      h.p = newh.p;
+      h.dat = newh.dat;
+      return true;
+    }
+    return false;
+  }
+  
+  // hash resume
+  // return f(p), and store resume data in mem
   // make regular f(p) from fResume(p, o)
-  function hashr(fResume){
-    var o = {};
-    var first = true;
+  function hashr(fResume, p, mem){
+    if (udfp(mem.h)){
+      mem.o = undefined;
+      mem.h = {};
+    }
     
     return hashp(function (p){
-      if (first){
-        o = fResume(p);
-        first = false;
-      } else {
-        o = fResume(p, o);
-      }
-      return o.dat;
-    });
+      mem.o = fResume(p, mem.o);
+      return mem.o.dat;
+    }, p, mem.h);
+  }
+  
+  function mergehashr(mem, newmem){
+    if (mergehashp(mem.h, newmem.h)){
+      mem.o = newmem.o;
+      return true;
+    }
+    return false;
   }
   
   // hash over a and p
   // mkFResume(a)(p, o) -> o = {dat: <real 3>, p: 50, ...}
   // hasha(mkFResume) -> f(a, p)
-  function hasha(mkFResume){
-    var h = {};
-    
-    return function (a, p){
-      // don't hash if size is greater than js max int len
-      if (a.dat.length > 16)return mkFResume(a)(p);
-      var d = a.neg + "|" + arrToNum(a.dat) + "|" + a.exp;
-      if (udfp(h[d]))h[d] = hashr(mkFResume(a));
-      return h[d](p);
-    };
+  function hasha(mkFResume, a, p, mem){
+    // don't hash if size is greater than js max int len
+    if (a.dat.length > 16)return mkFResume(a)(p);
+    var d = a.neg + "|" + arrToNum(a.dat) + "|" + a.exp;
+    if (udfp(mem[d]))mem[d] = {};
+    return hashr(mkFResume(a), p, mem[d]);
+  }
+  
+  function mergehasha(mem, newmem){
+    var changed = false;
+    for (var i in newmem){
+      if (i === "type")continue;
+      if (udfp(mem[i])){
+        mem[i] = newmem[i];
+        changed = true;
+        continue;
+      }
+      if (mergehashr(mem[i], newmem[i])){
+        changed = true;
+      }
+    }
+    return changed;
+  }
+  
+  //// Memory ////
+  
+  var memory = {};
+  
+  function getMemory(){
+    return memory;
+  }
+  
+  function setMemory(newMemory){
+    memory = newMemory;
+  }
+  
+  // return f, f(p) stores data in memory[memName]
+  function memhashp(f, memName){
+    return worig(f, function (p){
+      if (udfp(memory[memName]))memory[memName] = {type: "hashp"};
+      return hashp(f, p, memory[memName]);
+    });
+  }
+  
+  // return f, f(p) stores data in memory[memName]
+  function memhashr(fResume, memName){
+    return worig(fResume, function (p){
+      if (udfp(memory[memName]))memory[memName] = {type: "hashr"};
+      return hashr(fResume, p, memory[memName]);
+    });
+  }
+  
+  // return f, f(p) stores data in memory[memName]
+  function memhasha(mkFResume, memName){
+    return worig(mkFResume, function (a, p){
+      if (udfp(memory[memName]))memory[memName] = {type: "hasha"};
+      return hasha(mkFResume, a, p, memory[memName]);
+    });
+  }
+  
+  var mergeFns = {
+    hashp: mergehashp,
+    hashr: mergehashr,
+    hasha: mergehasha
+  }
+  
+  function mergeMemory(newMemory){
+    for (var i in newMemory){
+      if (udfp(memory[i])){
+        memory[i] = newMemory[i];
+        continue;
+      }
+      mergeFns[newMemory[i].type](memory[i], newMemory[i]);
+    }
   }
 
   //// Sign functions ////
@@ -1974,7 +2062,7 @@
   
   //// Mathematical constants ////
 
-  var acothCont = hasha(mkAcothResume);
+  var acothCont = memhasha(mkAcothResume, "acothCont");
   
   // var acoth2Resume = mkAcothResume(two());
   // a must be > 1
@@ -1996,7 +2084,7 @@
     };
   }
   
-  var acotCont = hasha(mkAcotResume);
+  var acotCont = memhasha(mkAcotResume, "acotCont");
   
   // continued fraction
   // transform of http://en.wikipedia.org/wiki/Inverse_trigonometric_functions#Continued_fractions_for_arctangent
@@ -2016,7 +2104,7 @@
     };
   }
   
-  var e = hashr(eResume);
+  var e = memhashr(eResume, "e");
   
   // continued fraction
   function eResume(p, o){
@@ -2043,14 +2131,14 @@
     return {dat: exp, p0: p0, q0: q0, p1: p1, q1: q1, an: an-4};
   }
   
-  var phi = hashr(phiResume);
+  var phi = memhashr(phiResume, "phi");
   
   // continued fraction
   function phiResume(p, o){
     return cfracResume(one(), one(), p, o);
   }
   
-  var ln2 = hashp(ln2Machin);
+  var ln2 = memhashp(ln2Machin, "ln2");
   
   // Machin-like formula
   // ln(2) = 144*acoth(251)+54*acoth(449)-38*acoth(4801)+62*acoth(8749)
@@ -2064,7 +2152,7 @@
     return rnd(sum, p);
   }
   
-  var ln5 = hashp(ln5Machin);
+  var ln5 = memhashp(ln5Machin, "ln5");
   
   // Machin-like formula
   // ln(5) = 334*acoth(251)+126*acoth(449)-88*acoth(4801)+144*acoth(8749)
@@ -2081,7 +2169,7 @@
     return [ln2(p), ln5(p)];
   }
   
-  var ln10 = hashp(ln10Machin);
+  var ln10 = memhashp(ln10Machin, "ln10");
   
   // Machin-like formula
   // ln(10) = 478*acoth(251)+180*acoth(449)-126*acoth(4801)+206*acoth(8749)
@@ -2094,7 +2182,7 @@
     return rnd(sum, p);
   }
   
-  var pi = hashp(piMachin);
+  var pi = memhashp(piMachin, "pi");
   
   // Machin-like formula 44*acot(57)+7*acot(239)-12*acot(682)+24*acot(12943)
   // http://en.wikipedia.org/wiki/Machin-like_formula#More_terms
@@ -2637,8 +2725,15 @@
     byzero: byzero,
     diffbyzero: diffbyzero,
     hashp: hashp,
+    mergehashp: mergehashp,
     hashr: hashr,
+    mergehashr: mergehashr,
     hasha: hasha,
+    mergehasha: mergehasha,
+    
+    getMemory: getMemory,
+    setMemory: setMemory,
+    mergeMemory: mergeMemory,
     
     abs: abs,
     neg: neg,
