@@ -1519,9 +1519,14 @@
     return rnd(exp, p);
   }
 
+  // p might be undefined
   function pow(a, b, p){
-    if (zerop(a) || onep(a) || onep(b))return rnd(a, p);
-    if (zerop(b))return rnd(one(), p);
+    if (onep(a) || onep(b))return udfp(p)?a:rnd(a, p);
+    if (onep(a) || zerop(b))return udfp(p)?one():rnd(one(), p);
+    if (zerop(a)){
+      if (negp(b))err(pow, "b cannot be negative when a is 0");
+      return zero();
+    }
     if (is(b, neg(one())))return div(one(), a, p);
     if (p == -inf)return zero();
     

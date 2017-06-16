@@ -764,12 +764,17 @@ QUnit.test('pow', function (assert){
   assert.teststr(R.pow(R.mknum("0.23"), R.mknum("-25.35343"), 100), "15219088078819140.3165134308044587144163918505332140631656460848179015860237102396399277678337848449506431509688688937");
   assert.throws(function (){
     R.pow(R.mknum("-2.3"), R.mknum("5.3"));
-  });
+  }, "pow of negative to rational should throw");
   assert.teststr(R.pow(R.mknum("1523435"), R.mknum("1.2"), 10), "26265683.9896258295");
   assert.teststr(R.pow(R.mknum("-3"), R.mknum("3")), "-27");
   assert.teststr(R.pow(R.mknum("-3.53"), R.mknum("3"), 16), "-43.986977");
   assert.teststr(R.pow(R.mknum("10"), R.mknum("100")), "10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
   assert.teststr(R.pow(R.mknum("10"), R.mknum("-100")), "0");
+  assert.teststr(R.pow(R.mknum("1.1"), R.mknum("1")), "1.1");
+  assert.teststr(R.pow(R.mknum("0.1"), R.mknum("1")), "0.1");
+  assert.throws(function () {
+    R.pow(R.mknum("0"), R.mknum("-1"));
+  }, "pow of 0 to -1 should throw");
   
   assert.teststr(R.powExact(R.mknum("-3.53"), 3), "-43.986977");
   assert.teststr(R.powDec(R.mknum("-3.53"), 3, 16), "-43.986977");
